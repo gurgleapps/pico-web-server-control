@@ -3,15 +3,23 @@ import socket
 import time
 import re
 import config
+import uos
 
 class GurgleAppsWebserver:
-    def __init__(self, wifi_ssid, wifi_password, port=80, max_wait=20):
+
+    def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www"):
         print("GurgleApps.com Webserver")
         self.port = port
-        self.max_wait = max_wait
-        self.wlan = network.WLAN(network.STA_IF)
+        self.timeout = timeout
+        self.wifi_ssid = wifi_ssid
+        self.wifi_password = wifi_password
+        self.doc_root = doc_root
+        # wifi client in station mode so we can connect to an access point
+        self.wlan = network.WLAN(network.STA_IF) 
+        # activate the interface
         self.wlan.active(True)
-        self.wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD)
+        # connect to the access point with the ssid and password
+        self.wlan.connect(self.wifi_ssid, self.wifi_password)
 
         self.html = """<!DOCTYPE html>
         <html>
@@ -21,12 +29,11 @@ class GurgleAppsWebserver:
             </body>
         </html>
         """
-        
-        max_wait = 10
-        while max_wait > 0:
+        counter = self.timeout
+        while counter > 0:
             if self.wlan.status() < 0 or self.wlan.status() >= 3:
                 break
-            max_wait -= 1
+            counter -= 1
             print('waiting for connection...')
             time.sleep(1)
 
@@ -43,7 +50,7 @@ class GurgleAppsWebserver:
         self.socket.bind(addr)
         self.socket.listen(1)
         self.serving = True
-        print('point your browser to http://', addr)
+        print('point your browser to http://', status[0])
         
         while self.serving:
             try:
@@ -60,7 +67,6 @@ class GurgleAppsWebserver:
                     print(url)
                     
                 response = self.html % "the url is "+url
-
                 cl.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
                 cl.send(response)
                 cl.close()
@@ -68,7 +74,21 @@ class GurgleAppsWebserver:
                     self.socket.close()
                     self.serving = False
                     print('connection closed')
+                file = self.getFile(self.doc_root + url)
+                print(file)
 
             except OSError as e:
                 cl.close()
                 print('connection closed')
+
+    def getFile(self, filename):
+        print("getFile: "+filename)
+        # Check if the file exists
+        if uos.stat(filename)[6] > 0:
+            # Open the file in read mode
+            with open(filename, "r") as f:
+                # Read the contents of the file into a string
+                return f.read()
+        else:
+            # The file doesn't exist, so set the contents to None or an empty string
+            return None
