@@ -5,6 +5,7 @@ import re
 import config
 import uos
 
+
 class GurgleAppsWebserver:
 
     def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www"):
@@ -15,7 +16,7 @@ class GurgleAppsWebserver:
         self.wifi_password = wifi_password
         self.doc_root = doc_root
         # wifi client in station mode so we can connect to an access point
-        self.wlan = network.WLAN(network.STA_IF) 
+        self.wlan = network.WLAN(network.STA_IF)
         # activate the interface
         self.wlan.active(True)
         # connect to the access point with the ssid and password
@@ -51,44 +52,60 @@ class GurgleAppsWebserver:
         self.socket.listen(1)
         self.serving = True
         print('point your browser to http://', status[0])
-        
+
         while self.serving:
-            try:
-                url = ""
-                cl, addr = self.socket.accept()
-                print('client connected from', addr)
-                request = cl.recv(1024)
-                print(request)
-                request = str(request)
-                url_pattern = re.compile(r"GET\s+([^\s]+)\s+HTTP")
-                match = url_pattern.search(request)
-                if match:
-                    url = match.group(1)
-                    print(url)
-                    
-                response = self.html % "the url is "+url
-                cl.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-                cl.send(response)
-                cl.close()
-                if (url=="/shutdown"):
-                    self.socket.close()
-                    self.serving = False
-                    print('connection closed')
-                file = self.getFile(self.doc_root + url)
+            self.listen_for_request()
+            
+
+    def listen_for_request(self):
+        try:
+            url = ""
+            cl, addr = self.socket.accept()
+            print('client connected from', addr)
+            request = cl.recv(1024)
+            print(request)
+            request = str(request)
+            url_pattern = re.compile(r"GET\s+([^\s]+)\s+HTTP")
+            match = url_pattern.search(request)
+            if match:
+                url = match.group(1)
+                print(url)
+            file = self.get_file(self.doc_root + url)
+            print("file: "+str(file))
+            if file:
+                print("file found so serving it")
                 print(file)
-
-            except OSError as e:
+                cl.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
+                cl.send(file)
                 cl.close()
+                return
+            print("file not found")
+            response = self.html % "page not found "+url
+            cl.send('HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n')
+            cl.send(response)
+            cl.close()
+            if (url == "/shutdown"):
+                self.socket.close()
+                self.serving = False
                 print('connection closed')
+            cl.close()
+        except OSError as e:
+            cl.close()
+            print('connection closed')
 
-    def getFile(self, filename):
+    def get_file(self, filename):
         print("getFile: "+filename)
-        # Check if the file exists
-        if uos.stat(filename)[6] > 0:
-            # Open the file in read mode
-            with open(filename, "r") as f:
-                # Read the contents of the file into a string
-                return f.read()
-        else:
-            # The file doesn't exist, so set the contents to None or an empty string
-            return None
+        try :
+            # Check if the file exists
+            if uos.stat(filename)[6] > 0:
+                # Open the file in read mode
+                with open(filename, "r") as f:
+                    # Read the contents of the file into a string
+                    return f.read()
+            else:
+                # The file doesn't exist
+                return False
+        except OSError as e:
+            # print the error
+            print(e)
+            return False
