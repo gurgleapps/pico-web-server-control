@@ -4,6 +4,8 @@ import time
 import re
 import config
 import uos
+import uasyncio as asyncio
+import _thread
 
 
 class GurgleAppsWebserver:
@@ -15,6 +17,7 @@ class GurgleAppsWebserver:
         self.wifi_ssid = wifi_ssid
         self.wifi_password = wifi_password
         self.doc_root = doc_root
+        self.function_routes=[]
         # wifi client in station mode so we can connect to an access point
         self.wlan = network.WLAN(network.STA_IF)
         # activate the interface
@@ -44,25 +47,30 @@ class GurgleAppsWebserver:
             print('connected')
             status = self.wlan.ifconfig()
             print('ip = ' + status[0])
-
-        addr = socket.getaddrinfo('0.0.0.0', self.port)[0][-1]
-
-        self.socket = socket.socket()
-        self.socket.bind(addr)
-        self.socket.listen(1)
         self.serving = True
         print('point your browser to http://', status[0])
+        try:
+            pass
+            #asyncio.run(self.start_server())
+        except OSError as e:
+            print(e)
+        finally:
+            asyncio.new_event_loop()
+        print("exit constructor")
 
-        while self.serving:
-            self.listen_for_request()
+    async def start_server(self):
+            asyncio.create_task(asyncio.start_server(self.serve_request, "0.0.0.0", 80))
+            while self.serving:
+                await asyncio.sleep(1)
+                
+    def add_function_route(self, route, function):
+       self.function_routes.append({"route":route, "function":function})
             
 
-    def listen_for_request(self):
+    async def serve_request(self, reader, writer):
         try:
             url = ""
-            cl, addr = self.socket.accept()
-            print('client connected from', addr)
-            request = cl.recv(1024)
+            request = await reader.read(1024)
             print(request)
             request = str(request)
             url_pattern = re.compile(r"GET\s+([^\s]+)\s+HTTP")
@@ -70,28 +78,38 @@ class GurgleAppsWebserver:
             if match:
                 url = match.group(1)
                 print(url)
+            # check if the url is a function route and if so run the function
+            for route in self.function_routes:
+                route_pattern = re.compile(route["route"])
+                match = route_pattern.match(url)
+                if match:
+                    # Extract the parameters from the URL
+                    params = match.groups()
+                    # Pass the parameters to the corresponding function
+                    print("calling function: "+str(route["function"])+", params: "+str(params))
+                    await route["function"](writer, *params)
+                    return
+            # perhaps it is a file
             file = self.get_file(self.doc_root + url)
             print("file: "+str(file))
             if file:
                 print("file found so serving it")
                 print(file)
-                cl.send('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-                cl.send(file)
-                cl.close()
+                writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
+                writer.write(file)
+                await writer.drain()
+                await writer.wait_closed()
                 return
             print("file not found")
             response = self.html % "page not found "+url
-            cl.send('HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n')
-            cl.send(response)
-            cl.close()
+            writer.write('HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n')
+            writer.write(response)
+            await writer.drain()
+            await writer.wait_closed()
             if (url == "/shutdown"):
-                self.socket.close()
                 self.serving = False
-                print('connection closed')
-            cl.close()
         except OSError as e:
-            cl.close()
-            print('connection closed')
+            print(e)
 
     def get_file(self, filename):
         print("getFile: "+filename)
