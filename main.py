@@ -9,36 +9,36 @@ delay = 0.5
 status = True
 led = Pin("LED", Pin.OUT)
 
-async def example_func(response, param1, param2):
+async def example_func(request, response, param1, param2):
     print("example_func")
     print("param1: " + param1)
     print("param2: " + param2)
-    response_string = json.dumps({"param1": param1, "param2": param2})
+    response_string = json.dumps({ "param1": param1, "param2": param2, "post_data": request.post_data})
     await response.send("200 OK", "application/json", response_string)
 
     
 
-async def send_status(response):
+async def send_status(request, response):
     # send boolean status and number frequency
     response_string = json.dumps({"status": status, "delay": delay})
     await response.send("200 OK", "application/json", response_string)
 
 
-async def set_delay(response, new_delay):
+async def set_delay(request, response, new_delay):
     print("new delay: " + new_delay)
     global delay
     delay = float(new_delay)
-    await send_status(response)
+    await send_status(request, response)
 
-async def stop_flashing(response):
+async def stop_flashing(request, response):
     global status
     status = False
-    await send_status(response)
+    await send_status(request, response)
 
-async def start_flashing(response):
+async def start_flashing(request, response):
     global status
     status = True
-    await send_status(response)
+    await send_status(request, response)
 
 async def main():
     await server.start_server()
@@ -62,11 +62,5 @@ server.add_function_route("/stop", stop_flashing)
 server.add_function_route("/start", start_flashing)
 server.add_function_route("/status", send_status)
 server.add_function_route("/example/func/<param1>/<param2>", example_func)
-
-""" server.add_function_route("^/set-delay/(\d+(?:\.\d+)?)$", set_delay) #23.78 2 23 float 
-server.add_function_route("^/stop$", stop_flashing)
-server.add_function_route("^/start$", start_flashing)
-server.add_function_route("^/status$", send_status) """
-
 
 asyncio.run(run())

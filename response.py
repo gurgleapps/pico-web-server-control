@@ -1,9 +1,8 @@
 # response.py
 
 class Response:
-    def __init__(self, writer, post_data=None):
+    def __init__(self, writer):
         self.writer = writer
-        self.post_data = post_data
 
     async def send(self, status, content_type, content):
         self.writer.write(f'HTTP/1.0 {status}\r\nContent-type: {content_type}\r\n\r\n')
