@@ -1,11 +1,8 @@
 import network
-import socket
-import time
 import re
-import config
+import time
 import uos
 import uasyncio as asyncio
-import _thread
 import ujson as json
 from response import Response
 from request import Request
@@ -119,17 +116,10 @@ class GurgleAppsWebserver:
             if file:
                 print("file found so serving it")
                 print(file)
-                writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-                writer.write(file)
-                await writer.drain()
-                await writer.wait_closed()
+                await response.send(file)
                 return
             print("file not found")
-            response = self.html % "page not found "+url
-            writer.write('HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n')
-            writer.write(response)
-            await writer.drain()
-            await writer.wait_closed()
+            await response.send(self.html % "page not found "+url, status_code=404)
             if (url == "/shutdown"):
                 self.serving = False
         except OSError as e:
