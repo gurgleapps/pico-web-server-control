@@ -70,14 +70,38 @@ class GurgleAppsWebserver:
     async def serve_request(self, reader, writer):
         try:
             url = ""
-            request = await reader.read(1024)
+            method = ""
+            content_length = 0
+            # Read the request line by line because we want the post data potentially
+            headers = []
+            while True:
+                line = await reader.readline()
+                line = line.decode('utf-8').strip()
+                if line == "":
+                    break
+                headers.append(line)
+
+            request = "\r".join(headers)
             print(request)
             request = str(request)
-            url_pattern = re.compile(r"GET\s+([^\s]+)\s+HTTP")
-            match = url_pattern.search(request)
+            request_pattern = re.compile(r"(GET|POST)\s+([^\s]+)\s+HTTP")
+            match = request_pattern.search(request)
             if match:
-                url = match.group(1)
-                print(url)
+                method = match.group(1)
+                url = match.group(2)
+                print(method, url)
+            # extract content length for POST requests
+            if method == "POST":
+                content_length_pattern = re.compile(r"Content-Length:\s+(\d+)")
+                match = content_length_pattern.search(request)
+                if match:
+                    content_length = int(match.group(1))
+                    print("content_length: "+str(content_length))
+            # Read the POST data if there's any
+            post_data = None
+            if content_length > 0:
+                post_data = await reader.readexactly(content_length)
+                print("POST data:", post_data)
             # check if the url is a function route and if so run the function
             path_components = self.get_path_components(url)
             print("path_components: "+str(path_components))
