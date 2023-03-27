@@ -14,14 +14,14 @@ async def example_func(request, response, param1, param2):
     print("param1: " + param1)
     print("param2: " + param2)
     response_string = json.dumps({ "param1": param1, "param2": param2, "post_data": request.post_data})
-    await response.send("200 OK", "application/json", response_string)
+    await response.send_json(response_string, 200)
 
     
 
 async def send_status(request, response):
     # send boolean status and number frequency
     response_string = json.dumps({"status": status, "delay": delay})
-    await response.send("200 OK", "application/json", response_string)
+    await response.send_json(response_string, 200)
 
 
 async def set_delay(request, response, new_delay):
