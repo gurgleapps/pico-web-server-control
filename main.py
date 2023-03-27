@@ -9,6 +9,17 @@ delay = 0.5
 status = True
 led = Pin("LED", Pin.OUT)
 
+async def example_func(writer, param1, param2):
+    print("example_func")
+    print("param1: " + param1)
+    print("param2: " + param2)
+    writer.write('HTTP/1.0 200 OK\r\nContent-type: application/json\r\n\r\n')
+    response = json.dumps({"param1": param1, "param2": param2})
+    writer.write(response)
+    await writer.drain()
+    await writer.wait_closed()
+    
+
 async def send_status(writer):
     writer.write('HTTP/1.0 200 OK\r\nContent-type: application/json\r\n\r\n')
     # send boolean status and number frequency
@@ -44,14 +55,22 @@ async def background_task():
             led.toggle()
         else:
             led.off()
+        
 
 async def run():
     await asyncio.gather(main(), background_task())
 
 server = GurgleAppsWebserver(config.WIFI_SSID, config.WIFI_PASSWORD)
-server.add_function_route("^/set-delay/(\d+(?:\.\d+)?)$", set_delay)
+server.add_function_route("/set-delay/<delay>", set_delay)
+server.add_function_route("/stop", stop_flashing)
+server.add_function_route("/start", start_flashing)
+server.add_function_route("/status", send_status)
+server.add_function_route("/example/func/<param1>/<param2>", example_func)
+
+""" server.add_function_route("^/set-delay/(\d+(?:\.\d+)?)$", set_delay) #23.78 2 23 float 
 server.add_function_route("^/stop$", stop_flashing)
 server.add_function_route("^/start$", start_flashing)
-server.add_function_route("^/status$", send_status)
+server.add_function_route("^/status$", send_status) """
+
 
 asyncio.run(run())
