@@ -6,7 +6,8 @@ import config
 import uos
 import uasyncio as asyncio
 import _thread
-
+import ujson as json
+from response import Response
 
 class GurgleAppsWebserver:
 
@@ -74,6 +75,7 @@ class GurgleAppsWebserver:
             content_length = 0
             # Read the request line by line because we want the post data potentially
             headers = []
+            post_data = None
             while True:
                 line = await reader.readline()
                 line = line.decode('utf-8').strip()
@@ -98,17 +100,18 @@ class GurgleAppsWebserver:
                     content_length = int(match.group(1))
                     print("content_length: "+str(content_length))
             # Read the POST data if there's any
-            post_data = None
             if content_length > 0:
-                post_data = await reader.readexactly(content_length)
-                print("POST data:", post_data)
+                post_data_raw = await reader.readexactly(content_length)
+                print("POST data:", post_data_raw)
+                post_data = json.loads(post_data_raw)
+            response = Response(writer, post_data)
             # check if the url is a function route and if so run the function
             path_components = self.get_path_components(url)
             print("path_components: "+str(path_components))
             route_function, params = self.match_route(path_components)
             if route_function:
                 print("calling function: "+str(route_function)+" with params: "+str(params))
-                await route_function(writer, *params)
+                await route_function(response, *params)
                 return
             # perhaps it is a file
             file = self.get_file(self.doc_root + url)

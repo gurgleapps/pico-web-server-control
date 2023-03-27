@@ -9,40 +9,36 @@ delay = 0.5
 status = True
 led = Pin("LED", Pin.OUT)
 
-async def example_func(writer, param1, param2):
+async def example_func(response, param1, param2):
     print("example_func")
     print("param1: " + param1)
     print("param2: " + param2)
-    writer.write('HTTP/1.0 200 OK\r\nContent-type: application/json\r\n\r\n')
-    response = json.dumps({"param1": param1, "param2": param2})
-    writer.write(response)
-    await writer.drain()
-    await writer.wait_closed()
+    response_string = json.dumps({"param1": param1, "param2": param2})
+    await response.send("200 OK", "application/json", response_string)
+
     
 
-async def send_status(writer):
-    writer.write('HTTP/1.0 200 OK\r\nContent-type: application/json\r\n\r\n')
+async def send_status(response):
     # send boolean status and number frequency
-    response = json.dumps({"status": status, "delay": delay})
-    writer.write(response)
-    await writer.drain()
-    await writer.wait_closed()
+    response_string = json.dumps({"status": status, "delay": delay})
+    await response.send("200 OK", "application/json", response_string)
 
-async def set_delay(writer, new_delay):
+
+async def set_delay(response, new_delay):
     print("new delay: " + new_delay)
     global delay
     delay = float(new_delay)
-    await send_status(writer)
+    await send_status(response)
 
-async def stop_flashing(writer):
+async def stop_flashing(response):
     global status
     status = False
-    await send_status(writer)
+    await send_status(response)
 
-async def start_flashing(writer):
+async def start_flashing(response):
     global status
     status = True
-    await send_status(writer)
+    await send_status(response)
 
 async def main():
     await server.start_server()
