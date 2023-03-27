@@ -8,6 +8,7 @@ import uasyncio as asyncio
 import _thread
 import ujson as json
 from response import Response
+from request import Request
 
 class GurgleAppsWebserver:
 
@@ -82,12 +83,10 @@ class GurgleAppsWebserver:
                 if line == "":
                     break
                 headers.append(line)
-
-            request = "\r".join(headers)
-            print(request)
-            request = str(request)
+            request_raw = str("\r".join(headers))
+            print(request_raw)
             request_pattern = re.compile(r"(GET|POST)\s+([^\s]+)\s+HTTP")
-            match = request_pattern.search(request)
+            match = request_pattern.search(request_raw)
             if match:
                 method = match.group(1)
                 url = match.group(2)
@@ -95,7 +94,7 @@ class GurgleAppsWebserver:
             # extract content length for POST requests
             if method == "POST":
                 content_length_pattern = re.compile(r"Content-Length:\s+(\d+)")
-                match = content_length_pattern.search(request)
+                match = content_length_pattern.search(request_raw)
                 if match:
                     content_length = int(match.group(1))
                     print("content_length: "+str(content_length))
@@ -104,14 +103,15 @@ class GurgleAppsWebserver:
                 post_data_raw = await reader.readexactly(content_length)
                 print("POST data:", post_data_raw)
                 post_data = json.loads(post_data_raw)
-            response = Response(writer, post_data)
+            request = Request(post_data)
+            response = Response(writer)
             # check if the url is a function route and if so run the function
             path_components = self.get_path_components(url)
             print("path_components: "+str(path_components))
             route_function, params = self.match_route(path_components)
             if route_function:
                 print("calling function: "+str(route_function)+" with params: "+str(params))
-                await route_function(response, *params)
+                await route_function(request, response, *params)
                 return
             # perhaps it is a file
             file = self.get_file(self.doc_root + url)
