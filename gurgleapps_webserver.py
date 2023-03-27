@@ -79,16 +79,13 @@ class GurgleAppsWebserver:
                 url = match.group(1)
                 print(url)
             # check if the url is a function route and if so run the function
-            for route in self.function_routes:
-                route_pattern = re.compile(route["route"])
-                match = route_pattern.match(url)
-                if match:
-                    # Extract the parameters from the URL
-                    params = match.groups()
-                    # Pass the parameters to the corresponding function
-                    print("calling function: "+str(route["function"])+", params: "+str(params))
-                    await route["function"](writer, *params)
-                    return
+            path_components = self.get_path_components(url)
+            print("path_components: "+str(path_components))
+            route_function, params = self.match_route(path_components)
+            if route_function:
+                print("calling function: "+str(route_function)+" with params: "+str(params))
+                await route_function(writer, *params)
+                return
             # perhaps it is a file
             file = self.get_file(self.doc_root + url)
             print("file: "+str(file))
@@ -127,3 +124,30 @@ class GurgleAppsWebserver:
             # print the error
             print(e)
             return False
+        
+    def get_path_components(self, path):
+        return tuple(filter(None, path.split('/')))
+    
+    def match_route(self, path_components):
+        for route in self.function_routes:
+            route_pattern = list(filter(None, route["route"].split("/")))
+            print("route_pattern: "+str(route_pattern))
+            if len(route_pattern) != len(path_components):
+                continue
+            match = True
+            params = []
+            for idx, pattern_component in enumerate(route_pattern):
+                print("pattern_component: "+pattern_component+" path_component: "+path_components[idx])
+                if pattern_component.startswith('<') and pattern_component.endswith('>'):
+                    param_value = path_components[idx]
+                    params.append(param_value)
+                else:
+                    if pattern_component != path_components[idx]:
+                        match = False
+                        break
+            if match:
+                return route["function"], params
+        return None, []
+
+
+
