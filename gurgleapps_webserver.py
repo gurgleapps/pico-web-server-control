@@ -148,7 +148,7 @@ class GurgleAppsWebserver:
     def match_route(self, path_components):
         for route in self.function_routes:
             route_pattern = list(filter(None, route["route"].split("/")))
-            print("route_pattern: "+str(route_pattern))
+            #print("route_pattern: "+str(route_pattern))
             if len(route_pattern) != len(path_components):
                 continue
             match = True

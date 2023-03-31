@@ -16,7 +16,8 @@ async def example_func(request, response, param1, param2):
     response_string = json.dumps({ "param1": param1, "param2": param2, "post_data": request.post_data})
     await response.send_json(response_string, 200)
 
-    
+async def say_hello(request, response, name):
+    await response.send_html("Hello " + name + " hope you are well")
 
 async def send_status(request, response):
     # send boolean status and number frequency
@@ -62,5 +63,6 @@ server.add_function_route("/stop", stop_flashing)
 server.add_function_route("/start", start_flashing)
 server.add_function_route("/status", send_status)
 server.add_function_route("/example/func/<param1>/<param2>", example_func)
+server.add_function_route("/hello/<name>", say_hello)
 
 asyncio.run(run())
