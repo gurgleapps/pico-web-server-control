@@ -54,12 +54,25 @@ class GurgleAppsWebserver:
         #asyncio.new_event_loop()
         print("exit constructor")
 
+    # async def start_server(self):
+    #     print("start_server")
+    #     asyncio.create_task(asyncio.start_server(
+    #         self.serve_request, "0.0.0.0", 80))
+    #     while self.serving:
+    #         await asyncio.sleep(0.1)
+
     async def start_server(self):
         print("start_server")
-        asyncio.create_task(asyncio.start_server(
+        server_task = asyncio.create_task(asyncio.start_server(
             self.serve_request, "0.0.0.0", 80))
-        while self.serving:
-            await asyncio.sleep(0.1)
+        await server_task
+
+    # async def start_server(self):
+    #     print("start_server")
+    #     server = await asyncio.start_server(
+    #         self.serve_request, "0.0.0.0", 80)
+    #     async with server:
+    #         await server.serve_forever()
 
     def add_function_route(self, route, function):
         self.function_routes.append({"route": route, "function": function})

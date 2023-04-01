@@ -5,6 +5,8 @@ import uasyncio as asyncio
 from machine import Pin
 import ujson as json
 
+#asyncio.set_debug(enabled=True, stack_size=3072)
+
 blink_off_time = 0.5
 blink_on_time = 0.5
 
