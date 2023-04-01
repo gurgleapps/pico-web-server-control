@@ -6,6 +6,8 @@ import uasyncio as asyncio
 import ujson as json
 from response import Response
 from request import Request
+import gc
+import os
 
 
 class GurgleAppsWebserver:
@@ -25,7 +27,6 @@ class GurgleAppsWebserver:
         self.wlan.active(True)
         # connect to the access point with the ssid and password
         self.wlan.connect(self.wifi_ssid, self.wifi_password)
-
         self.html = """<!DOCTYPE html>
         <html>
             <head> <title>GurgleApps.com Webserver</title> </head>
@@ -78,6 +79,7 @@ class GurgleAppsWebserver:
         self.function_routes.append({"route": route, "function": function})
 
     async def serve_request(self, reader, writer):
+        gc.collect()
         try:
             url = ""
             method = ""
@@ -87,11 +89,12 @@ class GurgleAppsWebserver:
             post_data = None
             while True:
                 line = await reader.readline()
+                #print("line: "+str(line))
                 line = line.decode('utf-8').strip()
                 if line == "":
                     break
                 headers.append(line)
-            request_raw = str("\r".join(headers))
+            request_raw = str("\r\n".join(headers))
             print(request_raw)
             request_pattern = re.compile(r"(GET|POST)\s+([^\s]+)\s+HTTP")
             match = request_pattern.search(request_raw)
@@ -99,6 +102,14 @@ class GurgleAppsWebserver:
                 method = match.group(1)
                 url = match.group(2)
                 print(method, url)
+            else: # regex didn't match, try splitting the request line
+                request_parts = request_raw.split(" ")
+                if len(request_parts) > 1:
+                    method = request_parts[0]
+                    url = request_parts[1]
+                    print(method, url)
+                else:
+                    print("no match")
             # extract content length for POST requests
             if method == "POST":
                 content_length_pattern = re.compile(r"Content-Length:\s+(\d+)")
@@ -123,15 +134,14 @@ class GurgleAppsWebserver:
                 await route_function(request, response, *params)
                 return
             # perhaps it is a file
-            file = self.get_file(self.doc_root + url)
-            if self.log_level > 2:
-                print("file: "+str(file))
-            if file:
-                print("file found so serving it")
+            file_path = self.doc_root + url
+            if self.log_level > 0:
+                print("file_path: "+str(file_path))
+            if uos.stat(file_path)[6] > 0:
                 content_type = self.get_content_type(url)
                 if self.log_level > 1:
                     print("content_type: "+str(content_type))
-                await response.send(file, 200, content_type)
+                await response.send_file(file_path, content_type=content_type)
                 return
             print("file not found")
             await response.send(self.html % "page not found "+url, status_code=404)
@@ -158,17 +168,21 @@ class GurgleAppsWebserver:
             return False
 
     def get_path_components(self, path):
+        print("get_path_components: "+path)
         return tuple(filter(None, path.split('/')))
 
     def match_route(self, path_components):
         for route in self.function_routes:
             route_pattern = list(filter(None, route["route"].split("/")))
-            # print("route_pattern: "+str(route_pattern))
+            if self.log_level > 1:
+                print("route_pattern: "+str(route_pattern))
             if len(route_pattern) != len(path_components):
                 continue
             match = True
             params = []
             for idx, pattern_component in enumerate(route_pattern):
+                if self.log_level > 2:
+                    print("pattern_component: "+str(pattern_component))
                 if pattern_component.startswith('<') and pattern_component.endswith('>'):
                     param_value = path_components[idx]
                     params.append(param_value)
