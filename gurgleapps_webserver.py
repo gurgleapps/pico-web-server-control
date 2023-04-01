@@ -42,7 +42,8 @@ class GurgleAppsWebserver:
             print('waiting for connection...')
             time.sleep(1)
 
-        if self.wlan.status() != 3:
+        #if self.wlan.status() != 3:
+        if self.wlan.isconnected() == False:
             raise RuntimeError('network connection failed')
         else:
             print('connected')
@@ -50,20 +51,15 @@ class GurgleAppsWebserver:
             print('ip = ' + status[0])
         self.serving = True
         print('point your browser to http://', status[0])
-        try:
-            pass
-            # asyncio.run(self.start_server())
-        except OSError as e:
-            print(e)
-        finally:
-            asyncio.new_event_loop()
+        #asyncio.new_event_loop()
         print("exit constructor")
 
     async def start_server(self):
+        print("start_server")
         asyncio.create_task(asyncio.start_server(
             self.serve_request, "0.0.0.0", 80))
         while self.serving:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
 
     def add_function_route(self, route, function):
         self.function_routes.append({"route": route, "function": function})
