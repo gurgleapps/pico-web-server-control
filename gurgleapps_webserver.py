@@ -7,16 +7,18 @@ import ujson as json
 from response import Response
 from request import Request
 
+
 class GurgleAppsWebserver:
 
-    def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www"):
+    def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www", log_level=0):
         print("GurgleApps.com Webserver")
         self.port = port
         self.timeout = timeout
         self.wifi_ssid = wifi_ssid
         self.wifi_password = wifi_password
         self.doc_root = doc_root
-        self.function_routes=[]
+        self.function_routes = []
+        self.log_level = log_level
         # wifi client in station mode so we can connect to an access point
         self.wlan = network.WLAN(network.STA_IF)
         # activate the interface
@@ -50,7 +52,7 @@ class GurgleAppsWebserver:
         print('point your browser to http://', status[0])
         try:
             pass
-            #asyncio.run(self.start_server())
+            # asyncio.run(self.start_server())
         except OSError as e:
             print(e)
         finally:
@@ -58,13 +60,13 @@ class GurgleAppsWebserver:
         print("exit constructor")
 
     async def start_server(self):
-            asyncio.create_task(asyncio.start_server(self.serve_request, "0.0.0.0", 80))
-            while self.serving:
-                await asyncio.sleep(1)
-                
+        asyncio.create_task(asyncio.start_server(
+            self.serve_request, "0.0.0.0", 80))
+        while self.serving:
+            await asyncio.sleep(1)
+
     def add_function_route(self, route, function):
-       self.function_routes.append({"route":route, "function":function})
-            
+        self.function_routes.append({"route": route, "function": function})
 
     async def serve_request(self, reader, writer):
         try:
@@ -107,16 +109,20 @@ class GurgleAppsWebserver:
             print("path_components: "+str(path_components))
             route_function, params = self.match_route(path_components)
             if route_function:
-                print("calling function: "+str(route_function)+" with params: "+str(params))
+                print("calling function: "+str(route_function) +
+                      " with params: "+str(params))
                 await route_function(request, response, *params)
                 return
             # perhaps it is a file
             file = self.get_file(self.doc_root + url)
-            print("file: "+str(file))
+            if self.log_level > 2:
+                print("file: "+str(file))
             if file:
                 print("file found so serving it")
-                print(file)
-                await response.send(file)
+                content_type = self.get_content_type(url)
+                if self.log_level > 1:
+                    print("content_type: "+str(content_type))
+                await response.send(file, 200, content_type)
                 return
             print("file not found")
             await response.send(self.html % "page not found "+url, status_code=404)
@@ -127,7 +133,7 @@ class GurgleAppsWebserver:
 
     def get_file(self, filename):
         print("getFile: "+filename)
-        try :
+        try:
             # Check if the file exists
             if uos.stat(filename)[6] > 0:
                 # Open the file in read mode
@@ -141,20 +147,21 @@ class GurgleAppsWebserver:
             # print the error
             print(e)
             return False
-        
+
     def get_path_components(self, path):
         return tuple(filter(None, path.split('/')))
-    
+
     def match_route(self, path_components):
         for route in self.function_routes:
             route_pattern = list(filter(None, route["route"].split("/")))
-            #print("route_pattern: "+str(route_pattern))
+            # print("route_pattern: "+str(route_pattern))
             if len(route_pattern) != len(path_components):
                 continue
             match = True
             params = []
             for idx, pattern_component in enumerate(route_pattern):
-                print("pattern_component: "+pattern_component+" path_component: "+path_components[idx])
+                print("pattern_component: "+pattern_component +
+                      " path_component: "+path_components[idx])
                 if pattern_component.startswith('<') and pattern_component.endswith('>'):
                     param_value = path_components[idx]
                     params.append(param_value)
@@ -166,5 +173,23 @@ class GurgleAppsWebserver:
                 return route["function"], params
         return None, []
 
+    def get_file_extension(self, file_path):
+        file_parts = file_path.split('.')
+        if len(file_parts) > 1:
+            return file_parts[-1]
+        return ''
 
 
+    def get_content_type(self,file_path):
+        extension = self.get_file_extension(file_path)
+        content_type_map = {
+            'html': 'text/html',
+            'css': 'text/css',
+            'js': 'application/javascript',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'ico': 'image/x-icon'
+        }
+        return content_type_map.get(extension, 'text/plain')
