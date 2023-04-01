@@ -160,8 +160,6 @@ class GurgleAppsWebserver:
             match = True
             params = []
             for idx, pattern_component in enumerate(route_pattern):
-                print("pattern_component: "+pattern_component +
-                      " path_component: "+path_components[idx])
                 if pattern_component.startswith('<') and pattern_component.endswith('>'):
                     param_value = path_components[idx]
                     params.append(param_value)

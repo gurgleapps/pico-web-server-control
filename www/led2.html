@@ -60,7 +60,8 @@
         </div>
       </div>
       <div class="mb-4">
-        <span id="status" class="text-gray-700 font-semibold">Status: Not Flashing</span>
+        <div id="status" class="text-gray-700 font-semibold">Status:</div>
+        <div id="status2" class="text-gray-700 font-semibold">Status2:</div>
       </div>
       <div class="flex justify-between">
         <button id="startBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded focus:outline-none hover:bg-blue-700">Start</button>
@@ -70,25 +71,36 @@
   </div>
   <script>
     const statusElement = document.getElementById('status');
+    const statusElement2 = document.getElementById('status2');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
-    const delayInput = document.getElementById('delay');
+    const onTimeInput = document.getElementById('onTime');
+    const offTimeInput = document.getElementById('offTime');
 
     (async () => {
-      const response = await fetch('/status');
-      updateStatus(response);
+      const response = await fetch('/status')
+      updateStatus(response)
     })();
 
     async function updateStatus(response) {
       if (response.ok) {
-        const json = await response.json();
+        const json = await response.json()
         console.log(json)
-        delayInput.value = json.delay;
-        const statusText = json.status ? 'Flashing' : 'Not Flashing';
-        statusElement.textContent = `Status: ${statusText} | Delay: ${json.delay} sec`;
+        onTimeInput.value = json.blink_on_time
+        offTimeInput.value = json.blink_off_time
+        const statusText = json.status ? 'Flashing' : 'Not Flashing'
+        statusElement.textContent = `Status: ${statusText}`
+        statusElement2.textContent = `On Time: ${json.blink_on_time} sec | Off Time: ${json.blink_off_time} sec`
       } else {
-        statusElement.textContent = 'Error: ' + response.status;
+        statusElement.textContent = 'Error: ' + response.status
       }
+    }
+
+    async function sendNewBlinkTimes() {
+      const onTime = onTimeInput.value;
+      const offTime = offTimeInput.value;
+      const response = await fetch(`/set-blink-pattern/${onTime}/${offTime}`);
+      updateStatus(response);
     }
 
     startBtn.addEventListener('click', async () => {
@@ -101,11 +113,9 @@
       updateStatus(response);
     });
 
-    delayInput.addEventListener('change', async () => {
-      const delay = delayInput.value;
-      const response = await fetch(`/set-delay/${delay}`);
-      updateStatus(response);
-    });
+    onTimeInput.addEventListener('change', sendNewBlinkTimes)
+    offTimeInput.addEventListener('change', sendNewBlinkTimes)
+
   </script>
 </body>
 </html>
