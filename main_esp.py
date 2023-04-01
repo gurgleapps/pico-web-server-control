@@ -4,6 +4,9 @@ import utime as time
 import uasyncio as asyncio
 from machine import Pin
 import ujson as json
+import gc
+
+gc.enable()
 
 #asyncio.set_debug(enabled=True, stack_size=3072)
 
