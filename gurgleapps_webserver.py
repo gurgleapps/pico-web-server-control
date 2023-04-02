@@ -1,3 +1,10 @@
+"""
+    Project: GurgleApps Web Server
+    File: gurgleapps_webserver.py
+    Author: GurgleApps.com
+    Date: Your Date 2023-04-01
+    Description: GurgleApps Web Server
+"""
 import network
 import re
 import time
@@ -137,7 +144,8 @@ class GurgleAppsWebserver:
             file_path = self.doc_root + url
             if self.log_level > 0:
                 print("file_path: "+str(file_path))
-            if uos.stat(file_path)[6] > 0:
+            #if uos.stat(file_path)[6] > 0:
+            if self.file_exists(file_path):
                 content_type = self.get_content_type(url)
                 if self.log_level > 1:
                     print("content_type: "+str(content_type))
@@ -149,6 +157,18 @@ class GurgleAppsWebserver:
                 self.serving = False
         except OSError as e:
             print(e)
+
+    def dir_exists(self, filename):
+        try:
+            return (os.stat(filename)[0] & 0x4000) != 0
+        except OSError:
+            return False
+        
+    def file_exists(self, filename):
+        try:
+            return (os.stat(filename)[0] & 0x4000) == 0
+        except OSError:
+            return False
 
     def get_file(self, filename):
         print("getFile: "+filename)
