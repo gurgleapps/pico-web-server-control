@@ -21,6 +21,7 @@ class GurgleAppsWebserver:
 
     def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www", log_level=0):
         print("GurgleApps.com Webserver")
+        self.ip_address = '1.1.1.1'
         self.port = port
         self.timeout = timeout
         self.wifi_ssid = wifi_ssid
@@ -58,6 +59,7 @@ class GurgleAppsWebserver:
             status = self.wlan.ifconfig()
             print('ip = ' + status[0])
         self.serving = True
+        self.ip_address = status[0]
         print('point your browser to http://', status[0])
         #asyncio.new_event_loop()
         print("exit constructor")
@@ -247,3 +249,32 @@ class GurgleAppsWebserver:
             'webm': 'video/webm',
         }
         return content_type_map.get(extension, 'text/plain')
+
+    # long pause for dots 3quick blinks for zero
+    async def blink_ip(self, led_pin, repeat=2, delay_between_digits=0.5):
+        print("blink_ip: "+str(self.ip_address))
+        def blink_number(number, pin, duration=0.2):
+            if number == 0:
+                blinks = 3
+                duration = 0.1
+            else:
+                blinks = number
+            for _ in range(blinks):
+                pin.on()
+                time.sleep(duration)
+                pin.off()
+                time.sleep(duration)
+
+        ip_digits_and_dots = []
+        for part in self.ip_address.split('.'):
+            for digit in part:
+                ip_digits_and_dots.append(int(digit))
+            ip_digits_and_dots.append('.')  # Add a dot to the list to represent the separator
+
+        for _ in range(repeat):
+            for element in ip_digits_and_dots:
+                if element == '.':
+                    await asyncio.sleep(2 * delay_between_digits)  # Longer pause for the dot
+                else:
+                    blink_number(element, led_pin)
+                    await asyncio.sleep(delay_between_digits)
