@@ -231,6 +231,19 @@ class GurgleAppsWebserver:
             'jpeg': 'image/jpeg',
             'png': 'image/png',
             'gif': 'image/gif',
-            'ico': 'image/x-icon'
+            'webp': 'image/webp',
+            'ico': 'image/x-icon',
+            'svg': 'image/svg+xml',
+            'json': 'application/json',
+            'xml': 'application/xml',
+            'pdf': 'application/pdf',
+            'zip': 'application/zip',
+            'txt': 'text/plain',
+            'csv': 'text/csv',
+            'mp3': 'audio/mpeg',
+            'mp4': 'video/mp4',
+            'wav': 'audio/wav',
+            'ogg': 'audio/ogg',
+            'webm': 'video/webm',
         }
         return content_type_map.get(extension, 'text/plain')
