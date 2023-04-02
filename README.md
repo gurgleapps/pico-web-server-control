@@ -2,7 +2,7 @@
 
 This repository contains code to control Raspberry Pi Pico, ESP8266, ESP32 or other MicroPython projects using a browser-based user interface. It allows you to interact with your Pico projects remotely from any device with a web browser, including smartphones, tablets, and computers.
 
-[![MicroPython Web Server Control](https://gurgleapps.com/assets/image-c/57/57b4760a0b877276a836a75bd107f158576c23b4.webp)]((https://gurgleapps.com/learn/projects/micropython-web-server-control-raspberry-pi-pico-projects)
+[![MicroPython Web Server Control](https://gurgleapps.com/assets/image-c/57/57b4760a0b877276a836a75bd107f158576c23b4.webp)](https://gurgleapps.com/learn/projects/micropython-web-server-control-raspberry-pi-pico-projects)
 
 ## Features
 
