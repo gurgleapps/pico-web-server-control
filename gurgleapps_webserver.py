@@ -251,15 +251,25 @@ class GurgleAppsWebserver:
         return content_type_map.get(extension, 'text/plain')
 
     # long pause for dots 3quick blinks for zero 2 quick for a dot
-    async def blink_ip(self, led_pin, repeat=2, delay_between_digits=0.5):
+    async def blink_ip(self, led_pin, ip = None, repeat=2, delay_between_digits=0.8):
         delay_between_repititions = 2
-        print("blink_ip: "+str(self.ip_address))
-        def blink_number(number, pin, duration=0.2):
-            if number == 0:
+        if ip == None:
+            ip = self.ip_address
+        print("blink_ip: " + str(ip))
+
+        def blink_element(element, pin, duration=0.2):
+            if element == '-':
+                blinks = 9
+                duration = 0.1
+            elif element == '.':
+                blinks = 2
+                duration = 0.1
+            elif element == 0:
                 blinks = 3
                 duration = 0.1
             else:
-                blinks = number
+                blinks = element
+
             for _ in range(blinks):
                 pin.on()
                 time.sleep(duration)
@@ -267,16 +277,16 @@ class GurgleAppsWebserver:
                 time.sleep(duration)
 
         ip_digits_and_dots = []
-        for part in self.ip_address.split('.'):
+        for part in ip.split('.'):
             for digit in part:
                 ip_digits_and_dots.append(int(digit))
             ip_digits_and_dots.append('.')  # Add a dot to the list to represent the separator
+        ip_digits_and_dots.pop()  # Remove the last dot
+        ip_digits_and_dots.append('-')  # Add a dash to the list to represent the end of the IP address
 
         for _ in range(repeat):
             for element in ip_digits_and_dots:
-                if element == '.':
-                    await asyncio.sleep(2 * delay_between_digits)  # Longer pause for the dot
-                else:
-                    blink_number(element, led_pin)
-                    await asyncio.sleep(delay_between_digits)
+                blink_element(element, led_pin)
+                await asyncio.sleep(delay_between_digits if element != '.' else 2 * delay_between_digits)
             await asyncio.sleep(delay_between_repititions)
+
