@@ -250,8 +250,9 @@ class GurgleAppsWebserver:
         }
         return content_type_map.get(extension, 'text/plain')
 
-    # long pause for dots 3quick blinks for zero
+    # long pause for dots 3quick blinks for zero 2 quick for a dot
     async def blink_ip(self, led_pin, repeat=2, delay_between_digits=0.5):
+        delay_between_repititions = 2
         print("blink_ip: "+str(self.ip_address))
         def blink_number(number, pin, duration=0.2):
             if number == 0:
@@ -278,3 +279,4 @@ class GurgleAppsWebserver:
                 else:
                     blink_number(element, led_pin)
                     await asyncio.sleep(delay_between_digits)
+            await asyncio.sleep(delay_between_repititions)
