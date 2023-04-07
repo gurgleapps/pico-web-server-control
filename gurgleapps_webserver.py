@@ -250,14 +250,14 @@ class GurgleAppsWebserver:
         }
         return content_type_map.get(extension, 'text/plain')
 
-    # long pause for dots 3quick blinks for zero 2 quick for a dot
-    async def blink_ip(self, led_pin, ip = None, repeat=2, delay_between_digits=0.8):
+    # long pause for dots 4 quick blinks for zero 2 quick for a dot
+    async def blink_ip(self, led_pin, ip = None, repeat=2, delay_between_digits=0.9, last_only = False):
         delay_between_repititions = 2
         if ip == None:
             ip = self.ip_address
         print("blink_ip: " + str(ip))
 
-        def blink_element(element, pin, duration=0.2):
+        def blink_element(element, pin, duration=0.27):
             if element == '-':
                 blinks = 9
                 duration = 0.1
@@ -265,7 +265,7 @@ class GurgleAppsWebserver:
                 blinks = 2
                 duration = 0.1
             elif element == 0:
-                blinks = 3
+                blinks = 4
                 duration = 0.1
             else:
                 blinks = element
@@ -277,7 +277,11 @@ class GurgleAppsWebserver:
                 time.sleep(duration)
 
         ip_digits_and_dots = []
-        for part in ip.split('.'):
+        ip_parts = ip.split('.')
+        if last_only:
+            ip_parts = [ip_parts[-1]] # Only blink the last part of the IP address
+
+        for part in ip_parts:
             for digit in part:
                 ip_digits_and_dots.append(int(digit))
             ip_digits_and_dots.append('.')  # Add a dot to the list to represent the separator

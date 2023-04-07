@@ -87,12 +87,16 @@ async def background_task():
         
 
 async def run():
-    await(server.blink_ip(led_pin=led))
+    #await(server.blink_ip(led_pin=led))
+    await(server.blink_ip(led_pin = led, last_only = True))
     await asyncio.gather(main(), background_task())
 
 server = GurgleAppsWebserver(config.WIFI_SSID, config.WIFI_PASSWORD, port=80, timeout=20, doc_root="/www", log_level=2)
 server.add_function_route("/set-delay/<delay>", set_delay)
-server.add_function_route("/set-blink-pattern/<on_time>/<off_time>", set_blink_pattern)
+server.add_function_route(
+    "/set-blink-pattern/<on_time>/<off_time>",
+    set_blink_pattern
+)
 server.add_function_route("/stop", stop_flashing)
 server.add_function_route("/start", start_flashing)
 server.add_function_route("/status", send_status)
