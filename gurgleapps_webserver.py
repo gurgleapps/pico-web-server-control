@@ -153,7 +153,13 @@ class GurgleAppsWebserver:
                     print("content_type: "+str(content_type))
                 await response.send_file(file_path, content_type=content_type)
                 return
-            print("file not found")
+            if url == "/":
+                print("root")
+                files_and_folders = self.list_files_and_folders(self.doc_root)
+                html = self.generate_root_page_html(files_and_folders)
+                await response.send(html)
+                return
+            print("file not found "+url)
             await response.send(self.html % "page not found "+url, status_code=404)
             if (url == "/shutdown"):
                 self.serving = False
@@ -294,3 +300,41 @@ class GurgleAppsWebserver:
                 await asyncio.sleep(delay_between_digits if element != '.' else 2 * delay_between_digits)
             await asyncio.sleep(delay_between_repititions)
 
+    def list_files_and_folders(self, path):
+        files_and_folders = os.listdir(path)
+        return files_and_folders
+
+    def generate_root_page_html(self, files_and_folders):
+        folder_icon_svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline-block w-6 h-6">
+        <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2H9.586A2 2 0 018 6H4z" />
+        </svg>
+        """
+        file_icon_svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline-block w-6 h-6">
+        <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0016.414 6L13 2.586A2 2 0 0011.414 2H6z" />
+        </svg>
+        """
+        file_list_html = "<ul class='list-none'>"
+        for file_or_folder in files_and_folders:
+            icon = folder_icon_svg if os.path.isdir(os.path.join("www", file_or_folder)) else file_icon_svg
+            file_list_html += f"<li class='my-2'><a href='/{file_or_folder}' class='text-blue-600 hover:text-blue-800'>{icon} {file_or_folder}</a></li>"
+        file_list_html += "</ul>"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>GurgleApps.com Webserver</title>
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            </head>
+            <body class="bg-gray-100">
+                <div class="container mx-auto p-8">
+                    <h1 class="text-3xl font-bold mb-4">Welcome to GurgleApps.com Webserver</h1>
+                    <h2 class="text-2xl mb-2">File List:</h2>
+                    {file_list_html}
+                </div>
+            </body>
+        </html>
+        """
+        return html_content
