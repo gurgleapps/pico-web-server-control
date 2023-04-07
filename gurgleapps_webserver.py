@@ -51,7 +51,7 @@ class GurgleAppsWebserver:
             print('waiting for connection...')
             time.sleep(1)
 
-        #if self.wlan.status() != 3:
+        # if self.wlan.status() != 3:
         if self.wlan.isconnected() == False:
             raise RuntimeError('network connection failed')
         else:
@@ -61,7 +61,7 @@ class GurgleAppsWebserver:
         self.serving = True
         self.ip_address = status[0]
         print('point your browser to http://', status[0])
-        #asyncio.new_event_loop()
+        # asyncio.new_event_loop()
         print("exit constructor")
 
     # async def start_server(self):
@@ -98,7 +98,7 @@ class GurgleAppsWebserver:
             post_data = None
             while True:
                 line = await reader.readline()
-                #print("line: "+str(line))
+                # print("line: "+str(line))
                 line = line.decode('utf-8').strip()
                 if line == "":
                     break
@@ -111,7 +111,7 @@ class GurgleAppsWebserver:
                 method = match.group(1)
                 url = match.group(2)
                 print(method, url)
-            else: # regex didn't match, try splitting the request line
+            else:  # regex didn't match, try splitting the request line
                 request_parts = request_raw.split(" ")
                 if len(request_parts) > 1:
                     method = request_parts[0]
@@ -146,7 +146,7 @@ class GurgleAppsWebserver:
             file_path = self.doc_root + url
             if self.log_level > 0:
                 print("file_path: "+str(file_path))
-            #if uos.stat(file_path)[6] > 0:
+            # if uos.stat(file_path)[6] > 0:
             if self.file_exists(file_path):
                 content_type = self.get_content_type(url)
                 if self.log_level > 1:
@@ -156,6 +156,8 @@ class GurgleAppsWebserver:
             if url == "/":
                 print("root")
                 files_and_folders = self.list_files_and_folders(self.doc_root)
+                await response.send_iterator(self.generate_root_page_html(files_and_folders))
+                return
                 html = self.generate_root_page_html(files_and_folders)
                 await response.send(html)
                 return
@@ -171,7 +173,7 @@ class GurgleAppsWebserver:
             return (os.stat(filename)[0] & 0x4000) != 0
         except OSError:
             return False
-        
+
     def file_exists(self, filename):
         try:
             return (os.stat(filename)[0] & 0x4000) == 0
@@ -228,8 +230,7 @@ class GurgleAppsWebserver:
             return file_parts[-1]
         return ''
 
-
-    def get_content_type(self,file_path):
+    def get_content_type(self, file_path):
         extension = self.get_file_extension(file_path)
         content_type_map = {
             'html': 'text/html',
@@ -257,7 +258,7 @@ class GurgleAppsWebserver:
         return content_type_map.get(extension, 'text/plain')
 
     # long pause for dots 4 quick blinks for zero 2 quick for a dot
-    async def blink_ip(self, led_pin, ip = None, repeat=2, delay_between_digits=0.9, last_only = False):
+    async def blink_ip(self, led_pin, ip=None, repeat=2, delay_between_digits=0.9, last_only=False):
         delay_between_repititions = 2
         if ip == None:
             ip = self.ip_address
@@ -285,14 +286,17 @@ class GurgleAppsWebserver:
         ip_digits_and_dots = []
         ip_parts = ip.split('.')
         if last_only:
-            ip_parts = [ip_parts[-1]] # Only blink the last part of the IP address
+            # Only blink the last part of the IP address
+            ip_parts = [ip_parts[-1]]
 
         for part in ip_parts:
             for digit in part:
                 ip_digits_and_dots.append(int(digit))
-            ip_digits_and_dots.append('.')  # Add a dot to the list to represent the separator
+            # Add a dot to the list to represent the separator
+            ip_digits_and_dots.append('.')
         ip_digits_and_dots.pop()  # Remove the last dot
-        ip_digits_and_dots.append('-')  # Add a dash to the list to represent the end of the IP address
+        # Add a dash to the list to represent the end of the IP address
+        ip_digits_and_dots.append('-')
 
         for _ in range(repeat):
             for element in ip_digits_and_dots:
@@ -313,6 +317,18 @@ class GurgleAppsWebserver:
         return files_and_folders
 
     def generate_root_page_html(self, files_and_folders):
+        yield """
+       <!DOCTYPE html>
+        <html>
+            <head>
+                <title>GurgleApps.com Webserver</title>
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            </head>
+            <body class="bg-gray-100">
+                <div class="container mx-auto p-8">
+                    <h1 class="text-3xl font-bold mb-4">Welcome to GurgleApps.com Webserver</h1>
+                    <h2 class="text-2xl mb-2">File List:</h2>
+        """
         folder_icon_svg = """
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline-block w-6 h-6">
         <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2H9.586A2 2 0 018 6H4z" />
@@ -323,26 +339,16 @@ class GurgleAppsWebserver:
         <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0016.414 6L13 2.586A2 2 0 0011.414 2H6z" />
         </svg>
         """
-        file_list_html = "<ul class='list-none'>"
+        yield "<ul class='list-none'>"
         for file_or_folder in files_and_folders:
-            icon = folder_icon_svg if file_or_folder['type']=='directory' else file_icon_svg
-            file_list_html += f"<li class='my-2'><a href='/{file_or_folder['name']}' class='text-blue-600 hover:text-blue-800'>{icon} {file_or_folder['name']}</a></li>"
-        file_list_html += "</ul>"
-
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <title>GurgleApps.com Webserver</title>
-                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-            </head>
-            <body class="bg-gray-100">
-                <div class="container mx-auto p-8">
-                    <h1 class="text-3xl font-bold mb-4">Welcome to GurgleApps.com Webserver</h1>
-                    <h2 class="text-2xl mb-2">File List:</h2>
-                    {file_list_html}
-                </div>
+            icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
+            yield f"<li class='my-2'><a href='/{file_or_folder['name']}' class='text-blue-600 hover:text-blue-800'>{icon} {file_or_folder['name']}</a></li>"
+        yield "</ul>"
+        # Closing tags for the body and container div
+        yield """
+              </div>
             </body>
         </html>
         """
-        return html_content
+       
+
