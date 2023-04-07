@@ -322,33 +322,45 @@ class GurgleAppsWebserver:
         <html>
             <head>
                 <title>GurgleApps.com Webserver</title>
-                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="/styles.css" rel="stylesheet">
             </head>
             <body class="bg-gray-100">
-                <div class="container mx-auto p-8">
-                    <h1 class="text-3xl font-bold mb-4">Welcome to GurgleApps.com Webserver</h1>
-                    <h2 class="text-2xl mb-2">File List:</h2>
+        """
+        yield """
+        <div class="relative flex min-h-screen flex-col justify-center overflow-hidden bg-gray-50 py-6 sm:py-12">
+        <div class="relative bg-white px-6 pb-8 pt-10 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-lg sm:px-10">
+        <div class="mx-auto max-w-md">
+        <img src="/img/logo.svg" class="h-12 w-auto" alt="GurgleApps.com">
+        """
+        yield """
+        <div class="divide-y divide-gray-300/50">
+        <div class="space-y-6 py-8 text-base leading-7 text-gray-600">
+          <h1 class="text-lg font-semibold">Welcome to GurgleApps.com Webserver</h1>
+          <h12 class="text-base font-semibold">File List:</h2>
+          <ul class="space-y-2 mt-3">
         """
         folder_icon_svg = """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline-block w-6 h-6">
-        <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2H9.586A2 2 0 018 6H4z" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6  fill-indigo-800">
+        <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
         </svg>
         """
         file_icon_svg = """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline-block w-6 h-6">
-        <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0016.414 6L13 2.586A2 2 0 0011.414 2H6z" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 fill-indigo-800">
+        <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a1.875 1.875 0 01-1.875-1.875V5.25A3.75 3.75 0 009 1.5H5.625z" />
+        <path d="M12.971 1.816A5.23 5.23 0 0114.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 013.434 1.279 9.768 9.768 0 00-6.963-6.963z" />
         </svg>
         """
-        yield "<ul class='list-none'>"
         for file_or_folder in files_and_folders:
             icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
-            yield f"<li class='my-2'><a href='/{file_or_folder['name']}' class='text-blue-600 hover:text-blue-800'>{icon} {file_or_folder['name']}</a></li>"
+            yield f"<li class='border-t pt-1'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold text-slate-800 hover:text-indigo-800'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
         yield "</ul>"
         # Closing tags for the body and container div
         yield """
-              </div>
-            </body>
-        </html>
+        </div>
+        <div class="pt-3 text-base font-semibold leading-7">
+        <p class="text-gray-900">More information</p><p><a href="https://gurgleapps.com/learn/projects/micropython-web-server-control-raspberry-pi-pico-projects" class="text-indigo-500 hover:text-sky-600">Project Home &rarr;</a>
+        </p></div></div></div></div></div></body></html>
         """
        
 

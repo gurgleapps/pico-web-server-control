@@ -29,7 +29,8 @@ class Response:
             file_size = os.stat(file_path)[6]
             await self.send_headers(status_code, content_type, content_length=file_size)
 
-            chunk_size = 1024  # Adjust the chunk size as needed
+            #chunk_size = 1024  # Adjust the chunk size as needed
+            chunk_size = 512  # Adjust the chunk size as needed
             with open(file_path, "rb") as f:
                 while True:
                     chunk = f.read(chunk_size)
