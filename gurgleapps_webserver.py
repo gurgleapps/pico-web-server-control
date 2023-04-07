@@ -301,7 +301,15 @@ class GurgleAppsWebserver:
             await asyncio.sleep(delay_between_repititions)
 
     def list_files_and_folders(self, path):
-        files_and_folders = os.listdir(path)
+        entries = uos.ilistdir(path)
+        files_and_folders = []
+        for entry in entries:
+            name = entry[0]
+            mode = entry[1]
+            if mode & 0o170000 == 0o040000:  # Check if it's a directory
+                files_and_folders.append({"name": name, "type": "directory"})
+            elif mode & 0o170000 == 0o100000:  # Check if it's a file
+                files_and_folders.append({"name": name, "type": "file"})
         return files_and_folders
 
     def generate_root_page_html(self, files_and_folders):
@@ -317,8 +325,8 @@ class GurgleAppsWebserver:
         """
         file_list_html = "<ul class='list-none'>"
         for file_or_folder in files_and_folders:
-            icon = folder_icon_svg if os.path.isdir(os.path.join("www", file_or_folder)) else file_icon_svg
-            file_list_html += f"<li class='my-2'><a href='/{file_or_folder}' class='text-blue-600 hover:text-blue-800'>{icon} {file_or_folder}</a></li>"
+            icon = folder_icon_svg if file_or_folder['type']=='directory' else file_icon_svg
+            file_list_html += f"<li class='my-2'><a href='/{file_or_folder['name']}' class='text-blue-600 hover:text-blue-800'>{icon} {file_or_folder['name']}</a></li>"
         file_list_html += "</ul>"
 
         html_content = f"""
