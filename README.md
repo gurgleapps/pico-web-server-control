@@ -6,17 +6,22 @@ This repository contains code to control Raspberry Pi Pico, ESP8266, ESP32 or ot
 
 ## Features
 
-- Serve static web pages from your Raspberry Pi Pico
+- Serve static and dynamic web pages from your Raspberry Pi Pico
 - Run Python functions on your microcontroller device from a web browser
 - Create dynamic web pages with live data from your Pico or other Microcontroller
+- Blink the IP address using the built-in LED, handy when you're out in the field with no screen or computer
+- Display a file and folder list of your root directory with an attractive and responsive user interface
+- End-to-end examples showcasing various functionalities
+- Easily customizable codebase
 
 ## Setup
 
 1. Make sure you have MicroPython on your Pico
 2. Clone this repository
 3. Copy the code to your Pico
-4. Edit `config.py` with your Wi-Fi details
+4. Edit `config.py` with your Wi-Fi details and IP blink options
 5. Run `main.py` and look for the IP address of your web server
+6. Point your browsers to http://<YOUR_IP> 
 
 ## Documentation
 

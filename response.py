@@ -29,7 +29,8 @@ class Response:
             file_size = os.stat(file_path)[6]
             await self.send_headers(status_code, content_type, content_length=file_size)
 
-            chunk_size = 1024  # Adjust the chunk size as needed
+            #chunk_size = 1024  # Adjust the chunk size as needed
+            chunk_size = 512  # Adjust the chunk size as needed
             with open(file_path, "rb") as f:
                 while True:
                     chunk = f.read(chunk_size)
@@ -43,3 +44,11 @@ class Response:
         except Exception as e:
             print("Error sending file:", e)
             await self.send('', status_code=404)
+
+    async def send_iterator(self, iterator, status_code=200, content_type="text/html"):
+        await self.send_headers(status_code=status_code, content_type=content_type)
+        for chunk in iterator:
+            self.writer.write(chunk)
+            await self.writer.drain()
+        await self.writer.wait_closed()
+
