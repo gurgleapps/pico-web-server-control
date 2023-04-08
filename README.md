@@ -2,6 +2,8 @@
 
 This repository contains code to control Raspberry Pi Pico, ESP8266, ESP32 or other MicroPython projects using a browser-based user interface. It allows you to interact with your Pico projects remotely from any device with a web browser, including smartphones, tablets, and computers.
 
+The latest features include improved memory usage, support for additional microcontrollers like ESP8266, and convenient options such as blinking the IP address using the built-in LED and displaying a file list for the root directory.
+
 [![MicroPython Web Server Control](https://gurgleapps.com/assets/image-c/57/57b4760a0b877276a836a75bd107f158576c23b4.webp)](https://gurgleapps.com/learn/projects/micropython-web-server-control-raspberry-pi-pico-projects)
 
 ## Features
@@ -19,9 +21,14 @@ This repository contains code to control Raspberry Pi Pico, ESP8266, ESP32 or ot
 1. Make sure you have MicroPython on your Pico
 2. Clone this repository
 3. Copy the code to your Pico
-4. Edit `config.py` with your Wi-Fi details and IP blink options
+4. Edit `config.py` with your Wi-Fi details and IP blink options:
+   - `WIFI_SSID`: Set this to your Wi-Fi network SSID (e.g., `"your_wifi_ssid"`)
+   - `WIFI_PASSWORD`: Set this to your Wi-Fi network password (e.g., `"your_wifi_password"`)
+   - `BLINK_IP`: Set this to `True` if you want the Pico to blink its IP address using the built-in LED; set it to `False` if not
+   - `BLINK_LAST_ONLY`: Set this to `True` if you want to blink only the last octet of the IP address; set it to `False` to blink the entire IP address
 5. Run `main.py` and look for the IP address of your web server
-6. Point your browsers to http://<YOUR_IP> 
+6. Point your browsers to http://<YOUR_IP>
+
 
 ## Documentation
 
