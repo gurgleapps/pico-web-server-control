@@ -331,7 +331,7 @@ class GurgleAppsWebserver:
         <div class="relative flex min-h-screen flex-col justify-center overflow-hidden bg-gray-50 py-6 sm:py-12">
         <div class="relative bg-white px-6 pb-8 pt-10 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-lg sm:px-10">
         <div class="mx-auto max-w-md">
-        <img src="/img/logo.svg" class="h-12 w-auto" alt="GurgleApps.com">
+        <a href="https://gurgleapps.com"><img src="/img/logo.svg" class="h-12 w-auto" alt="GurgleApps.com"></a>
         """
         yield """
         <div class="divide-y divide-gray-300/50">
@@ -353,7 +353,7 @@ class GurgleAppsWebserver:
         """
         for file_or_folder in files_and_folders:
             icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
-            yield f"<li class='border-t pt-1'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold text-slate-800 hover:text-indigo-800'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
+            yield f"<li class='border-t pt-1'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold text-slate-800 hover:text-indigo-600'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
         yield "</ul>"
         # Closing tags for the body and container div
         yield """
