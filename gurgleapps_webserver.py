@@ -74,7 +74,7 @@ class GurgleAppsWebserver:
     async def start_server(self):
         print("start_server")
         server_task = asyncio.create_task(asyncio.start_server(
-            self.serve_request, "0.0.0.0", 80))
+            self.serve_request, "0.0.0.0", self.port))
         await server_task
 
     # async def start_server(self):
@@ -147,20 +147,22 @@ class GurgleAppsWebserver:
             if self.log_level > 0:
                 print("file_path: "+str(file_path))
             # if uos.stat(file_path)[6] > 0:
-            if self.file_exists(file_path):
+            if self.file_exists(file_path): #serve a file
                 content_type = self.get_content_type(url)
                 if self.log_level > 1:
                     print("content_type: "+str(content_type))
                 await response.send_file(file_path, content_type=content_type)
                 return
-            if url == "/":
-                print("root")
-                files_and_folders = self.list_files_and_folders(self.doc_root)
+            # perhaps it is a folder
+            if self.dir_exists(file_path): #serve a folder
+                files_and_folders = self.list_files_and_folders(file_path)
                 await response.send_iterator(self.generate_root_page_html(files_and_folders))
                 return
-                html = self.generate_root_page_html(files_and_folders)
-                await response.send(html)
-                return
+            # if url == "/":
+            #     print("root")
+            #     files_and_folders = self.list_files_and_folders(self.doc_root)
+            #     await response.send_iterator(self.generate_root_page_html(files_and_folders))
+            #     return
             print("file not found "+url)
             await response.send(self.html % "page not found "+url, status_code=404)
             if (url == "/shutdown"):
@@ -307,6 +309,8 @@ class GurgleAppsWebserver:
     def list_files_and_folders(self, path):
         entries = uos.ilistdir(path)
         files_and_folders = []
+        if path != self.doc_root:
+            files_and_folders.append({"name": "..", "type": "directory"})
         for entry in entries:
             name = entry[0]
             mode = entry[1]
