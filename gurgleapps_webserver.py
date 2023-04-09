@@ -309,7 +309,9 @@ class GurgleAppsWebserver:
     def list_files_and_folders(self, path):
         entries = uos.ilistdir(path)
         files_and_folders = []
-        if path != self.doc_root:
+        # print("list_files_and_folders: "+path)
+        # print("list_files_and_folders: "+self.doc_root)
+        if path != self.doc_root and path != self.doc_root + '/':
             files_and_folders.append({"name": "..", "type": "directory"})
         for entry in entries:
             name = entry[0]
