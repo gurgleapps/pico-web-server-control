@@ -338,22 +338,24 @@ class GurgleAppsWebserver:
         <div class="space-y-6 py-8 text-base leading-7 text-gray-600">
           <h1 class="text-lg font-semibold">Welcome to GurgleApps.com Webserver</h1>
           <h12 class="text-base font-semibold">File List:</h2>
-          <ul class="space-y-2 mt-3">
+          <ul class="mt-3">
         """
         folder_icon_svg = """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6  fill-indigo-800">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
         <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
         </svg>
         """
         file_icon_svg = """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 fill-indigo-800">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
         <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a1.875 1.875 0 01-1.875-1.875V5.25A3.75 3.75 0 009 1.5H5.625z" />
         <path d="M12.971 1.816A5.23 5.23 0 0114.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 013.434 1.279 9.768 9.768 0 00-6.963-6.963z" />
         </svg>
         """
-        for file_or_folder in files_and_folders:
-            icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
-            yield f"<li class='border-t pt-1'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold text-slate-800 hover:text-indigo-600'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
+        for index, file_or_folder in enumerate(files_and_folders):
+                icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
+                text_class = 'text-blue-500' if file_or_folder['type'] == 'directory' else 'text-blue-600' 
+                bg_class = "" if index % 2 == 1 else "bg-gray-50"
+                yield f"<li class='border-t border-gray-300 py-1.5 {bg_class}'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold {text_class} hover:text-blue-700'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
         yield "</ul>"
         # Closing tags for the body and container div
         yield """
