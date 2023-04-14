@@ -30,6 +30,7 @@ blink_off_time = 0.5
 blink_on_time = 0.5
 
 status = True
+shutdown = False
 
 async def example_func(request, response, param1, param2):
     print("example_func")
@@ -72,13 +73,17 @@ async def start_flashing(request, response):
     await send_status(request, response)
 
 async def stop_server(request, response):
+    global shutdown
     await response.send_html("Server stopping")
     await server.stop_server()
+    shutdown = True
+
 
 async def background_task():
+    global shutdown
     if config.BLINK_IP:
         await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
-    while True:
+    while not shutdown:
         if status:
             led.on()
             await asyncio.sleep(blink_on_time)

@@ -73,20 +73,22 @@ class GurgleAppsWebserver:
 
     async def start_server(self):
         print("start_server")
-        self.server_task = asyncio.create_task(asyncio.start_server(
-            self.serve_request, "0.0.0.0", self.port))
+        self.server = await asyncio.start_server(
+            self.serve_request, "0.0.0.0", self.port
+        )
 
     async def stop_server(self):
-        if self.server_task is not None:
-            self.server_task.cancel()
-            await self.server_task
-            self.server_task = None
-            print("stop_server")
+        if self.server is not None:
+            self.server.close()
+        await self.server.wait_closed()
+        self.server = None
+        print("stop_server")
 
     async def start_server_with_background_task(self, background_task):
         async def main():
             await asyncio.gather(self.start_server(), background_task())
         await main()
+
 
     # async def start_server(self):
     #     print("start_server")
