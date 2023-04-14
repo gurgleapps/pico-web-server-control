@@ -58,7 +58,7 @@ class GurgleAppsWebserver:
             print('connected')
             status = self.wlan.ifconfig()
             print('ip = ' + status[0])
-        self.serving = True
+        self.server_running = False
         self.ip_address = status[0]
         print('point your browser to http://', status[0])
         # asyncio.new_event_loop()
@@ -73,9 +73,20 @@ class GurgleAppsWebserver:
 
     async def start_server(self):
         print("start_server")
-        server_task = asyncio.create_task(asyncio.start_server(
+        self.server_task = asyncio.create_task(asyncio.start_server(
             self.serve_request, "0.0.0.0", self.port))
-        await server_task
+
+    async def stop_server(self):
+        if self.server_task is not None:
+            self.server_task.cancel()
+            await self.server_task
+            self.server_task = None
+            print("stop_server")
+
+    async def start_server_with_background_task(self, background_task):
+        async def main():
+            await asyncio.gather(self.start_server(), background_task())
+        await main()
 
     # async def start_server(self):
     #     print("start_server")

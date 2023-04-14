@@ -71,10 +71,13 @@ async def start_flashing(request, response):
     status = True
     await send_status(request, response)
 
-async def main():
-    await server.start_server()
+async def stop_server(request, response):
+    await response.send_html("Server stopping")
+    await server.stop_server()
 
 async def background_task():
+    if config.BLINK_IP:
+        await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
     while True:
         if status:
             led.on()
@@ -84,14 +87,6 @@ async def background_task():
         else:
             led.off()
             await asyncio.sleep(0.2)
-        
-
-async def run():
-    #await(server.blink_ip(led_pin=led))
-    if config.BLINK_IP:
-        await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
-
-    await asyncio.gather(main(), background_task())
 
 server = GurgleAppsWebserver(config.WIFI_SSID, config.WIFI_PASSWORD, port=80, timeout=20, doc_root="/www", log_level=2)
 server.add_function_route("/set-delay/<delay>", set_delay)
@@ -104,6 +99,7 @@ server.add_function_route("/start", start_flashing)
 server.add_function_route("/status", send_status)
 server.add_function_route("/example/func/<param1>/<param2>", example_func)
 server.add_function_route("/hello/<name>", say_hello)
+server.add_function_route("/stop-server", stop_server)
 
-
-asyncio.run(run())
+asyncio.run(server.start_server_with_background_task(background_task))
+print('DONE')
