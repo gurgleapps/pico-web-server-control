@@ -187,6 +187,28 @@ class GurgleAppsWebserver:
                 self.serving = False
         except OSError as e:
             print(e)
+            
+    def parse_form_data(self, form_data_raw):
+        form_data = {}
+        for pair in form_data_raw.split('&'):
+            key, value = pair.split('=')
+            form_data[self.url_decode(key)] = self.url_decode(value)
+        return form_data
+    
+    def url_decode(self, encoded_str):
+        decoded_str = ""
+        i = 0
+        while i < len(encoded_str):
+            if encoded_str[i] == '%':
+                hex_code = encoded_str[i + 1:i + 3]
+                char = chr(int(hex_code, 16))
+                decoded_str += char
+                i += 3
+            else:
+                decoded_str += encoded_str[i]
+                i += 1
+        return decoded_str
+
 
     def dir_exists(self, filename):
         try:
@@ -323,13 +345,6 @@ class GurgleAppsWebserver:
                 blink_element(element, led_pin)
                 await asyncio.sleep(delay_between_digits if element != '.' else 2 * delay_between_digits)
             await asyncio.sleep(delay_between_repititions)
-            
-    def parse_form_data(self, form_data_raw):
-        form_data = {}
-        for pair in form_data_raw.split('&'):
-            key, value = pair.split('=')
-            form_data[key] = value
-        return form_data
 
 
     def list_files_and_folders(self, path):
