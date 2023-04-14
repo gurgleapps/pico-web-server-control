@@ -90,6 +90,7 @@ class GurgleAppsWebserver:
     async def serve_request(self, reader, writer):
         gc.collect()
         try:
+            response = Response(writer)
             url = ""
             method = ""
             content_length = 0
@@ -130,9 +131,14 @@ class GurgleAppsWebserver:
             if content_length > 0:
                 post_data_raw = await reader.readexactly(content_length)
                 print("POST data:", post_data_raw)
-                post_data = json.loads(post_data_raw)
+                try:
+                    post_data = json.loads(post_data_raw)
+                except ValueError as e:
+                    print("Error decoding JSON data:", e)
+                    # Handle the error (e.g., send an error response to the client)
+                    await response.send("Invalid JSON data", status_code=400)
+                    return
             request = Request(post_data)
-            response = Response(writer)
             # check if the url is a function route and if so run the function
             path_components = self.get_path_components(url)
             print("path_components: "+str(path_components))
