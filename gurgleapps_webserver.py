@@ -74,7 +74,7 @@ class GurgleAppsWebserver:
     async def start_server(self):
         print("start_server")
         server_task = asyncio.create_task(asyncio.start_server(
-            self.serve_request, "0.0.0.0", 80))
+            self.serve_request, "0.0.0.0", self.port))
         await server_task
 
     # async def start_server(self):
@@ -90,6 +90,7 @@ class GurgleAppsWebserver:
     async def serve_request(self, reader, writer):
         gc.collect()
         try:
+            response = Response(writer)
             url = ""
             method = ""
             content_length = 0
@@ -130,9 +131,26 @@ class GurgleAppsWebserver:
             if content_length > 0:
                 post_data_raw = await reader.readexactly(content_length)
                 print("POST data:", post_data_raw)
-                post_data = json.loads(post_data_raw)
+                content_type_header = "Content-Type: application/json"  # default to JSON
+                for header in headers:
+                    if header.lower().startswith("content-type:"):
+                        content_type_header = header
+                        break
+                if "application/json" in content_type_header.lower():
+                    try:
+                        post_data = json.loads(post_data_raw)
+                    except ValueError as e:
+                        print("Error decoding JSON data:", e)
+                        # Handle the error (e.g., send an error response to the client)
+                        await response.send("Invalid JSON data", status_code=400)
+                        return
+                elif "application/x-www-form-urlencoded" in content_type_header.lower():
+                    post_data = self.parse_form_data(post_data_raw.decode('utf-8'))
+                else:
+                    # Handle unsupported content types
+                    await response.send("Unsupported content type", status_code=415)
+                    return
             request = Request(post_data)
-            response = Response(writer)
             # check if the url is a function route and if so run the function
             path_components = self.get_path_components(url)
             print("path_components: "+str(path_components))
@@ -147,26 +165,50 @@ class GurgleAppsWebserver:
             if self.log_level > 0:
                 print("file_path: "+str(file_path))
             # if uos.stat(file_path)[6] > 0:
-            if self.file_exists(file_path):
+            if self.file_exists(file_path): #serve a file
                 content_type = self.get_content_type(url)
                 if self.log_level > 1:
                     print("content_type: "+str(content_type))
                 await response.send_file(file_path, content_type=content_type)
                 return
-            if url == "/":
-                print("root")
-                files_and_folders = self.list_files_and_folders(self.doc_root)
+            # perhaps it is a folder
+            if self.dir_exists(file_path): #serve a folder
+                files_and_folders = self.list_files_and_folders(file_path)
                 await response.send_iterator(self.generate_root_page_html(files_and_folders))
                 return
-                html = self.generate_root_page_html(files_and_folders)
-                await response.send(html)
-                return
+            # if url == "/":
+            #     print("root")
+            #     files_and_folders = self.list_files_and_folders(self.doc_root)
+            #     await response.send_iterator(self.generate_root_page_html(files_and_folders))
+            #     return
             print("file not found "+url)
             await response.send(self.html % "page not found "+url, status_code=404)
             if (url == "/shutdown"):
                 self.serving = False
         except OSError as e:
             print(e)
+            
+    def parse_form_data(self, form_data_raw):
+        form_data = {}
+        for pair in form_data_raw.split('&'):
+            key, value = pair.split('=')
+            form_data[self.url_decode(key)] = self.url_decode(value)
+        return form_data
+    
+    def url_decode(self, encoded_str):
+        decoded_str = ""
+        i = 0
+        while i < len(encoded_str):
+            if encoded_str[i] == '%':
+                hex_code = encoded_str[i + 1:i + 3]
+                char = chr(int(hex_code, 16))
+                decoded_str += char
+                i += 3
+            else:
+                decoded_str += encoded_str[i]
+                i += 1
+        return decoded_str
+
 
     def dir_exists(self, filename):
         try:
@@ -304,9 +346,14 @@ class GurgleAppsWebserver:
                 await asyncio.sleep(delay_between_digits if element != '.' else 2 * delay_between_digits)
             await asyncio.sleep(delay_between_repititions)
 
+
     def list_files_and_folders(self, path):
         entries = uos.ilistdir(path)
         files_and_folders = []
+        # print("list_files_and_folders: "+path)
+        # print("list_files_and_folders: "+self.doc_root)
+        if path != self.doc_root and path != self.doc_root + '/':
+            files_and_folders.append({"name": "..", "type": "directory"})
         for entry in entries:
             name = entry[0]
             mode = entry[1]
@@ -331,29 +378,31 @@ class GurgleAppsWebserver:
         <div class="relative flex min-h-screen flex-col justify-center overflow-hidden bg-gray-50 py-6 sm:py-12">
         <div class="relative bg-white px-6 pb-8 pt-10 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-lg sm:px-10">
         <div class="mx-auto max-w-md">
-        <img src="/img/logo.svg" class="h-12 w-auto" alt="GurgleApps.com">
+        <a href="https://gurgleapps.com"><img src="/img/logo.svg" class="h-12 w-auto" alt="GurgleApps.com"></a>
         """
         yield """
         <div class="divide-y divide-gray-300/50">
         <div class="space-y-6 py-8 text-base leading-7 text-gray-600">
           <h1 class="text-lg font-semibold">Welcome to GurgleApps.com Webserver</h1>
           <h12 class="text-base font-semibold">File List:</h2>
-          <ul class="space-y-2 mt-3">
+          <ul class="mt-3">
         """
         folder_icon_svg = """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6  fill-indigo-800">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
         <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
         </svg>
         """
         file_icon_svg = """
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 fill-indigo-800">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
         <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a1.875 1.875 0 01-1.875-1.875V5.25A3.75 3.75 0 009 1.5H5.625z" />
         <path d="M12.971 1.816A5.23 5.23 0 0114.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 013.434 1.279 9.768 9.768 0 00-6.963-6.963z" />
         </svg>
         """
-        for file_or_folder in files_and_folders:
-            icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
-            yield f"<li class='border-t pt-1'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold text-slate-800 hover:text-indigo-800'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
+        for index, file_or_folder in enumerate(files_and_folders):
+                icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
+                text_class = 'text-blue-500' if file_or_folder['type'] == 'directory' else 'text-blue-600' 
+                bg_class = "" if index % 2 == 1 else "bg-gray-50"
+                yield f"<li class='border-t border-gray-300 py-1.5 {bg_class}'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold {text_class} hover:text-blue-700'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
         yield "</ul>"
         # Closing tags for the body and container div
         yield """
