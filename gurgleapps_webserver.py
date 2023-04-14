@@ -131,12 +131,24 @@ class GurgleAppsWebserver:
             if content_length > 0:
                 post_data_raw = await reader.readexactly(content_length)
                 print("POST data:", post_data_raw)
-                try:
-                    post_data = json.loads(post_data_raw)
-                except ValueError as e:
-                    print("Error decoding JSON data:", e)
-                    # Handle the error (e.g., send an error response to the client)
-                    await response.send("Invalid JSON data", status_code=400)
+                content_type_header = "Content-Type: application/json"  # default to JSON
+                for header in headers:
+                    if header.lower().startswith("content-type:"):
+                        content_type_header = header
+                        break
+                if "application/json" in content_type_header.lower():
+                    try:
+                        post_data = json.loads(post_data_raw)
+                    except ValueError as e:
+                        print("Error decoding JSON data:", e)
+                        # Handle the error (e.g., send an error response to the client)
+                        await response.send("Invalid JSON data", status_code=400)
+                        return
+                elif "application/x-www-form-urlencoded" in content_type_header.lower():
+                    post_data = self.parse_form_data(post_data_raw.decode('utf-8'))
+                else:
+                    # Handle unsupported content types
+                    await response.send("Unsupported content type", status_code=415)
                     return
             request = Request(post_data)
             # check if the url is a function route and if so run the function
@@ -311,6 +323,14 @@ class GurgleAppsWebserver:
                 blink_element(element, led_pin)
                 await asyncio.sleep(delay_between_digits if element != '.' else 2 * delay_between_digits)
             await asyncio.sleep(delay_between_repititions)
+            
+    def parse_form_data(self, form_data_raw):
+        form_data = {}
+        for pair in form_data_raw.split('&'):
+            key, value = pair.split('=')
+            form_data[key] = value
+        return form_data
+
 
     def list_files_and_folders(self, path):
         entries = uos.ilistdir(path)
