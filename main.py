@@ -5,8 +5,8 @@
     Date: 2021-04-01
     Description: Demonstrates how to use the GurgleApps Webserver
 """
-import config
 from gurgleapps_webserver import GurgleAppsWebserver
+import config
 import utime as time
 import uasyncio as asyncio
 from machine import Pin
@@ -92,7 +92,7 @@ async def main():
         else:
             led.off()
             await asyncio.sleep(0.2)
-
+            
 server = GurgleAppsWebserver(config.WIFI_SSID, config.WIFI_PASSWORD, port=80, timeout=20, doc_root="/www", log_level=2)
 server.add_function_route("/set-delay/<delay>", set_delay)
 server.add_function_route(
