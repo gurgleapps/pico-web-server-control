@@ -31,37 +31,10 @@ jobs:
     - name: list to see if it's there
       run: |
         ls ./micropython/mpy-cross
-        ls ./micropython/mpy-cross/mpy-cross
-        ./micropython/mpy-cross/mpy-cross
 
     - name: Compile .py files to .mpy
       run: |
-        for file in $(find . -name "*.py"); do ./micropython/mpy-cross/mpy-cross $file; done
-  
-    - name: Compile .py files to .mpy 1
-      run: |
-        for file in *.py; do
-          ./micropython/mpy-cross/mpy-cross "$file"
-        done
-
-    - name: Compile .py files to .mpy 2
-      run: |
-        find . -name "*.py" | xargs -I {} ./micropython/mpy-cross/mpy-cross {}
-
-    - name: Compile .py files to .mpy 3
-      run: |
-        echo '#!/bin/bash' > compile.sh
-        echo 'for file in *.py; do' >> compile.sh
-        echo '  ./micropython/mpy-cross/mpy-cross "$file"' >> compile.sh
-        echo 'done' >> compile.sh
-        chmod +x compile.sh
-        ./compile.sh
-
-
-
-    - name: Compile .py files to .mpy
-      run: |
-        find . -name "*.py" -exec ./micropython/mpy-cross/mpy-cross {} \;
+         find . -name "*.py" -exec ./micropython/mpy-cross/mpy_cross {} \;
 
     - name: Commit .mpy files
       run: |
