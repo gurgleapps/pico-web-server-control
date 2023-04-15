@@ -31,6 +31,8 @@ jobs:
     - name: list to see if it's there
       run: |
         ls ./micropython/mpy-cross
+        ls ./micropython/mpy-cross/mpy-cross
+        ./micropython/mpy-cross/mpy-cross
 
     - name: Compile .py files to .mpy
       run: |
