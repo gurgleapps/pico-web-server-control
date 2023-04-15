@@ -38,4 +38,4 @@ jobs:
         git config --global user.email "nereply@gurgleapps.com"
         git add -A
         git commit -m "Auto-compiled .mpy files" || echo "No changes to commit"
-        git push || echo "No changes to push"
+        git push --force || echo "No changes to push"
