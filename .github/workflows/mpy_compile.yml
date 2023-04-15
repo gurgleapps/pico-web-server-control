@@ -31,6 +31,10 @@ jobs:
     - name: list to see if it's there
       run: |
         ls ./micropython/mpy-cross
+
+    - name: Compile .py files to .mpy
+      run: |
+        for file in $(find . -name "*.py"); do ./micropython/mpy-cross/mpy-cross $file; done
   
     - name: Compile .py files to .mpy 1
       run: |
