@@ -36,7 +36,11 @@ jobs:
 
     - name: Compile .py files to .mpy
       run: |
-         find . -path ./micropython -prune -false -o -name "*.py" -exec ./micropython/mpy-cross/build/mpy-cross {} \;
+         rm -rf mpy
+         mkdir mpy
+         find . -maxdepth 1 -name "*.py" ! -name "main.py" ! -name "config.py" -exec ./micropython/mpy-cross/build/mpy-cross {} -o mpy/{} \;
+
+
 
     - name: Remove micropython folder
       run: |
