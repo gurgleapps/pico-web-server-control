@@ -34,12 +34,14 @@ jobs:
 
     - name: Compile .py files to .mpy
       run: |
+         chmod +x ./micropython/mpy-cross/mpy_cross
          find . -name "*.py" -exec ./micropython/mpy-cross/mpy_cross {} \;
 
     - name: Commit .mpy files
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "nereply@gurgleapps.com"
+        git rm --cached micropython
         git add -A
         git commit -m "Auto-compiled .mpy files" || echo "No changes to commit"
         git push || echo "No changes to push"
