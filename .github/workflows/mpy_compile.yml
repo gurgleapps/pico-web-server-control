@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -36,11 +38,15 @@ jobs:
       run: |
          find . -name "*.py" -exec ./micropython/mpy-cross/build/mpy-cross {} \;
 
+    - name: Remove micropython folder
+      run: |
+        rm -rf micropython
+
     - name: Commit .mpy files
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "nereply@gurgleapps.com"
-        git rm --cached ./micropython || echo "No micropython directory in the staging area"
         git add -A
         git commit -m "Auto-compiled .mpy files" || echo "No changes to commit"
+        git remote set-url origin https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
         git push || echo "No changes to push"
