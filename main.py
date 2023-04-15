@@ -79,7 +79,7 @@ async def stop_server(request, response):
     shutdown = True
 
 
-async def background_task():
+async def main():
     global shutdown
     if config.BLINK_IP:
         await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
@@ -106,5 +106,5 @@ server.add_function_route("/example/func/<param1>/<param2>", example_func)
 server.add_function_route("/hello/<name>", say_hello)
 server.add_function_route("/stop-server", stop_server)
 
-asyncio.run(server.start_server_with_background_task(background_task))
+asyncio.run(server.start_server_with_background_task(main))
 print('DONE')
