@@ -5,8 +5,8 @@
     Date: 2021-04-01
     Description: Demonstrates how to use the GurgleApps Webserver
 """
-import config
 from gurgleapps_webserver import GurgleAppsWebserver
+import config
 import utime as time
 import uasyncio as asyncio
 from machine import Pin
@@ -30,6 +30,7 @@ blink_off_time = 0.5
 blink_on_time = 0.5
 
 status = True
+shutdown = False
 
 async def example_func(request, response, param1, param2):
     print("example_func")
@@ -71,11 +72,18 @@ async def start_flashing(request, response):
     status = True
     await send_status(request, response)
 
-async def main():
-    await server.start_server()
+async def stop_server(request, response):
+    global shutdown
+    await response.send_html("Server stopping")
+    await server.stop_server()
+    shutdown = True
 
-async def background_task():
-    while True:
+
+async def main():
+    global shutdown
+    if config.BLINK_IP:
+        await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
+    while not shutdown:
         if status:
             led.on()
             await asyncio.sleep(blink_on_time)
@@ -84,15 +92,7 @@ async def background_task():
         else:
             led.off()
             await asyncio.sleep(0.2)
-        
-
-async def run():
-    #await(server.blink_ip(led_pin=led))
-    if config.BLINK_IP:
-        await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
-
-    await asyncio.gather(main(), background_task())
-
+            
 server = GurgleAppsWebserver(config.WIFI_SSID, config.WIFI_PASSWORD, port=80, timeout=20, doc_root="/www", log_level=2)
 server.add_function_route("/set-delay/<delay>", set_delay)
 server.add_function_route(
@@ -104,6 +104,7 @@ server.add_function_route("/start", start_flashing)
 server.add_function_route("/status", send_status)
 server.add_function_route("/example/func/<param1>/<param2>", example_func)
 server.add_function_route("/hello/<name>", say_hello)
+server.add_function_route("/stop-server", stop_server)
 
-
-asyncio.run(run())
+asyncio.run(server.start_server_with_background_task(main))
+print('DONE')

@@ -29,6 +29,23 @@ The latest features include improved memory usage, support for additional microc
 5. Run `main.py` and look for the IP address of your web server
 6. Point your browsers to http://<YOUR_IP>
 
+## Using .py or .mpy files
+
+This repository provides both `.py` and `.mpy` files for most modules. While the `.py` files are standard Python files, the `.mpy` files are precompiled MicroPython bytecode files. Using `.mpy` files can result in reduced memory usage and faster execution times on your microcontroller.
+
+### Recommendations
+- For most microcontrollers, you can choose between `.py` and `.mpy` files based on your preference.
+- For ESP8266, due to its limited memory, it is recommended to use `.mpy` files for modules other than `main.py` and `config.py`.
+
+To choose between `.py` and `.mpy` files, follow these steps:
+
+1. Copy `main.py` and `config.py` from the root directory to your microcontroller.
+2. Choose between the `.py` and `.mpy` files for the remaining modules:
+   - If you prefer to use the standard Python files, copy the corresponding files from the root directory to your microcontroller.
+   - If you prefer to use the precompiled MicroPython bytecode files, copy the corresponding files from the `mpy` folder to your microcontroller.
+
+Remember to customize `config.py` with your Wi-Fi details and other settings before running the code.
+
 
 ## Documentation
 

@@ -1,0 +1,56 @@
+name: Compile to MPY
+
+on:
+  push:
+    branches:
+      - dev
+    # paths:
+    #   - '**.py'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Install Micropython
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libreadline-dev libffi-dev git pkg-config
+        git clone https://github.com/micropython/micropython.git
+        cd micropython/mpy-cross
+        make
+
+    - name: list to see if it's there
+      run: |
+        ls -al ./micropython/mpy-cross/build
+
+    - name: Compile .py files to .mpy
+      run: |
+         rm -rf mpy
+         mkdir mpy
+         find . -maxdepth 1 -name "*.py" ! -name "main.py" ! -name "config.py" -exec sh -c './micropython/mpy-cross/build/mpy-cross {} -o mpy/$(basename -s .py {}).mpy' \;
+
+
+
+    - name: Remove micropython folder
+      run: |
+        rm -rf micropython
+
+    - name: Commit .mpy files
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "nereply@gurgleapps.com"
+        git add -A
+        git commit -m "Auto-compiled .mpy files" || echo "No changes to commit"
+        git remote set-url origin https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git push || echo "No changes to push"
