@@ -32,7 +32,7 @@ jobs:
       run: |
         ls ./micropython/mpy-cross
   
-   - name: Compile .py files to .mpy 1
+    - name: Compile .py files to .mpy 1
       run: |
         for file in *.py; do
           ./micropython/mpy-cross/mpy-cross "$file"
