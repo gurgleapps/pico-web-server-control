@@ -78,6 +78,14 @@ async def stop_server(request, response):
     await server.stop_server()
     shutdown = True
 
+async def run_as_access_point(request, response):
+    print("Running as access point")
+    success = server.connect_access_point('gurgleapps', 'gurgleapps')
+    if success:
+        await response.send_html("Running as access point")
+    else:
+        await response.send_html("Failed to run as access point")
+
 
 async def main():
     global shutdown
@@ -93,7 +101,14 @@ async def main():
             led.off()
             await asyncio.sleep(0.2)
             
-server = GurgleAppsWebserver(config.WIFI_SSID, config.WIFI_PASSWORD, port=80, timeout=20, doc_root="/www", log_level=2)
+server = GurgleAppsWebserver(
+    config.WIFI_SSID,
+    config.WIFI_PASSWORD,
+    port=80,
+    timeout=20,
+    doc_root="/www",
+    log_level=2
+)
 server.add_function_route("/set-delay/<delay>", set_delay)
 server.add_function_route(
     "/set-blink-pattern/<on_time>/<off_time>",
@@ -105,6 +120,7 @@ server.add_function_route("/status", send_status)
 server.add_function_route("/example/func/<param1>/<param2>", example_func)
 server.add_function_route("/hello/<name>", say_hello)
 server.add_function_route("/stop-server", stop_server)
+server.add_function_route("/run-as-access-point", run_as_access_point)
 
 asyncio.run(server.start_server_with_background_task(main))
 print('DONE')

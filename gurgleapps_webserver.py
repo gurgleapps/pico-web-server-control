@@ -30,11 +30,12 @@ class GurgleAppsWebserver:
         self.function_routes = []
         self.log_level = log_level
         # wifi client in station mode so we can connect to an access point
-        self.wlan = network.WLAN(network.STA_IF)
+        self.wlan_sta = network.WLAN(network.STA_IF)
+        self.wlan_ap = network.WLAN(network.AP_IF)
         # activate the interface
-        self.wlan.active(True)
+        #self.wlan.active(True)
         # connect to the access point with the ssid and password
-        self.wlan.connect(self.wifi_ssid, self.wifi_password)
+        #self.wlan.connect(self.wifi_ssid, self.wifi_password)
         self.html = """<!DOCTYPE html>
         <html>
             <head> <title>GurgleApps.com Webserver</title> </head>
@@ -43,33 +44,56 @@ class GurgleAppsWebserver:
             </body>
         </html>
         """
-        counter = self.timeout
-        while counter > 0:
-            if self.wlan.status() < 0 or self.wlan.status() >= 3:
-                break
-            counter -= 1
-            print('waiting for connection...')
-            time.sleep(1)
+        # counter = self.timeout
+        # while counter > 0:
+        #     if self.wlan_sta.status() < 0 or self.wlan_sta.status() >= 3:
+        #         break
+        #     counter -= 1
+        #     print('waiting for connection...')
+        #     time.sleep(1)
 
         # if self.wlan.status() != 3:
-        if self.wlan.isconnected() == False:
-            raise RuntimeError('network connection failed')
+        # if self.wlan_sta.isconnected() == False:
+        #     raise RuntimeError('network connection failed')
+        # else:
+        #     print('connected')
+        #     status = self.wlan_sta.ifconfig()
+        #     print('ip = ' + status[0])
+        if self.connect_wifi(self.wifi_ssid, self.wifi_password):
+            print('point your browser to http://', self.ip_address)
         else:
-            print('connected')
-            status = self.wlan.ifconfig()
-            print('ip = ' + status[0])
+            raise RuntimeError('network connection failed')
         self.server_running = False
-        self.ip_address = status[0]
-        print('point your browser to http://', status[0])
-        # asyncio.new_event_loop()
-        print("exit constructor")
+        # self.ip_address = status[0]
+        
 
-    # async def start_server(self):
-    #     print("start_server")
-    #     asyncio.create_task(asyncio.start_server(
-    #         self.serve_request, "0.0.0.0", 80))
-    #     while self.serving:
-    #         await asyncio.sleep(0.1)
+    def connect_wifi(self, ssid, password):
+        # Deactivate AP mode
+        self.wlan_ap.active(False)
+        # Activate Wi-Fi mode and connect
+        self.wlan_sta.active(True)
+        self.wlan_sta.connect(ssid, password)
+        # Wait for connection
+        print("Connecting to Wi-Fi...")
+        for _ in range(self.timeout):
+            time.sleep(1)
+            if self.wlan_sta.isconnected():
+                self.ip_address = self.wlan_sta.ifconfig()[0]
+                print(f"Connected to Wi-Fi. IP: {self.ip_address}")
+                return True
+        print("Failed to connect to Wi-Fi.")
+        return False
+    
+    def connect_access_point(self, ssid, password=None):
+        # Deactivate Wi-Fi mode
+        self.wlan_sta.active(False)
+        # Activate AP mode
+        self.wlan_ap.config(essid=ssid, password=password)
+        self.wlan_ap.active(True)
+        self.ip_address = self.wlan_ap.ifconfig()[0]
+        print(f"AP Mode started. SSID: {ssid}, IP: {self.ip_address}")
+        return True
+
 
     async def start_server(self):
         print("start_server")
