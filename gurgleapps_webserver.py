@@ -70,6 +70,13 @@ class GurgleAppsWebserver:
     def connect_wifi(self, ssid, password):
         # Deactivate AP mode
         self.wlan_ap.active(False)
+        if self.wlan_sta.isconnected():
+            print("Already connected to Wi-Fi. IP: "+self.wlan_sta.ifconfig()[0])
+            self.wlan_sta.disconnect()
+            self.wlan_sta.active(False)
+            time.sleep(1)
+            print("Disconnected from Wi-Fi.")
+
         # Activate Wi-Fi mode and connect
         self.wlan_sta.active(True)
         self.wlan_sta.connect(ssid, password)
@@ -84,10 +91,12 @@ class GurgleAppsWebserver:
         print("Failed to connect to Wi-Fi.")
         return False
     
-    def connect_access_point(self, ssid, password=None):
+    def start_access_point(self, ssid, password=None):
+    #def connect_access_point(self, ssid, password=None, ip='192.168.1.1', subnet='255.255.255.0', gateway='192.168.1.1', dns='8.8.8.8'):
         # Deactivate Wi-Fi mode
-        self.wlan_sta.active(False)
-        # Activate AP mode
+        # self.wlan_sta.active(False)
+        # Set the IP configuration for the AP mode
+        #self.wlan_ap.ifconfig((ip, subnet, gateway, dns))
         self.wlan_ap.config(essid=ssid, password=password)
         self.wlan_ap.active(True)
         self.ip_address = self.wlan_ap.ifconfig()[0]

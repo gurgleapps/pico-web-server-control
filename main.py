@@ -8,6 +8,7 @@
 from gurgleapps_webserver import GurgleAppsWebserver
 import config
 import utime as time
+import ntptime
 import uasyncio as asyncio
 from machine import Pin
 import ujson as json
@@ -72,6 +73,21 @@ async def start_flashing(request, response):
     status = True
     await send_status(request, response)
 
+async def get_time(request, response):
+    if not server.wlan_sta.isconnected():
+        response_string = json.dumps({"error": True, "message": "Not connected to wifi", "time": time.localtime()})
+        await response.send_json(response_string, 200)
+        return
+    try:
+        ntptime.host = "pool.ntp.org"
+        #ntptime.host = "time.nist.gov"
+        ntptime.settime()
+        response_string = json.dumps({"error": False, "time": time.localtime()})
+        await response.send_json(response_string, 200)
+    except Exception as e:
+        response_string = json.dumps({"error": True, "message": str(e), "time": time.localtime()})
+        await response.send_json(response_string, 200)
+
 async def stop_server(request, response):
     global shutdown
     await response.send_html("Server stopping")
@@ -121,6 +137,7 @@ server.add_function_route("/example/func/<param1>/<param2>", example_func)
 server.add_function_route("/hello/<name>", say_hello)
 server.add_function_route("/stop-server", stop_server)
 server.add_function_route("/run-as-access-point", run_as_access_point)
+server.add_function_route("/get-time", get_time)
 
 asyncio.run(server.start_server_with_background_task(main))
 print('DONE')
