@@ -26,6 +26,8 @@ class GurgleAppsWebserver:
         self.timeout = timeout
         self.wifi_ssid = wifi_ssid
         self.wifi_password = wifi_password
+        self.ap_ssid = None
+        self.ap_password = None
         self.doc_root = doc_root
         self.function_routes = []
         self.log_level = log_level
@@ -68,6 +70,8 @@ class GurgleAppsWebserver:
         
 
     def connect_wifi(self, ssid, password):
+        self.wifi_ssid = ssid
+        self.wifi_password = password
         # Deactivate AP mode
         self.wlan_ap.active(False)
         if self.wlan_sta.isconnected():
@@ -97,11 +101,20 @@ class GurgleAppsWebserver:
         # self.wlan_sta.active(False)
         # Set the IP configuration for the AP mode
         #self.wlan_ap.ifconfig((ip, subnet, gateway, dns))
+        self.ap_ssid = ssid
+        self.ap_password = password
         self.wlan_ap.config(essid=ssid, password=password)
         self.wlan_ap.active(True)
         self.ip_address = self.wlan_ap.ifconfig()[0]
         print(f"AP Mode started. SSID: {ssid}, IP: {self.ip_address}")
         return True
+    
+    async def maintain_connection(self):
+        while True:
+            if self.wlan_sta.isconnected() == False:
+                print("Lost connection to Wi-Fi. Attempting to reconnect...")
+                self.connect_wifi(self.wifi_ssid, self.wifi_password)
+            await asyncio.sleep(10)
 
 
     async def start_server(self):
@@ -119,7 +132,11 @@ class GurgleAppsWebserver:
 
     async def start_server_with_background_task(self, background_task):
         async def main():
-            await asyncio.gather(self.start_server(), background_task())
+            await asyncio.gather(
+                self.start_server(), 
+                background_task(),
+                self.maintain_connection()
+                )
         await main()
 
 
