@@ -20,7 +20,7 @@ The latest features include improved memory usage, support for additional microc
 
 1. Make sure you have MicroPython on your Pico
 2. Clone this repository
-3. Copy the code to your Pico
+3. Copy the code from the /src folder to your Pico
 4. Edit `config.py` with your Wi-Fi details and IP blink options:
    - `WIFI_SSID`: Set this to your Wi-Fi network SSID (e.g., `"your_wifi_ssid"`)
    - `WIFI_PASSWORD`: Set this to your Wi-Fi network password (e.g., `"your_wifi_password"`)

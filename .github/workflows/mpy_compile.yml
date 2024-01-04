@@ -38,7 +38,7 @@ jobs:
       run: |
          rm -rf mpy
          mkdir mpy
-         find . -maxdepth 1 -name "*.py" ! -name "main.py" ! -name "config.py" -exec sh -c './micropython/mpy-cross/build/mpy-cross {} -o mpy/$(basename -s .py {}).mpy' \;
+         find src/. -maxdepth 1 -name "*.py" ! -name "main.py" ! -name "config.py" -exec sh -c './micropython/mpy-cross/build/mpy-cross {} -o mpy/$(basename -s .py {}).mpy' \;
 
 
 
