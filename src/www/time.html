@@ -90,7 +90,8 @@
     const flipClockHours = document.getElementById('flipClockHours')
     const flipClockMins = document.getElementById('flipClockMins')
     const flipClockYear = document.getElementById('flipClockYear')
-    const path = 'http://192.168.1.167'
+    //const path = 'http://192.168.1.167'
+    const path = ''
 
     document.addEventListener('DOMContentLoaded', async (event) => {
       getTime()
@@ -101,7 +102,7 @@
     });
 
     async function getTime() {
-      const response = await fetch(path + '/get-time')
+      //const response = await fetch(path + '/get-time')
       if (response.ok) {
         const json = await response.json()
         if (json.error) {
