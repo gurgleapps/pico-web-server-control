@@ -96,7 +96,7 @@ async def stop_server(request, response):
 
 async def run_as_access_point(request, response):
     print("Running as access point")
-    success = server.connect_access_point('gurgleapps', 'gurgleapps')
+    success = server.start_access_point('gurgleapps', 'gurgleapps')
     if success:
         await response.send_html("Running as access point")
     else:

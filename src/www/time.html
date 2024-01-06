@@ -30,8 +30,8 @@
                   <div class="bg-gradient-to-br from-gray-700 to-gray-900"></div>
                 </div>
                 <div class="relative px-1" id="flipClockYear">0000</div>
-                <div class="absolute inset-0  h-full flex items-center justify-center">
-                  <div class="h-px  bg-gray-800"></div>
+                <div class="absolute inset-0 w-full  h-full flex items-center justify-center">
+                  <div class="h-px w-full  bg-gray-800"></div>
                 </div>
               </div>
             </div>
@@ -109,11 +109,11 @@
           statusElement.textContent = 'Error: ' + json.message
         } else {
           statusElement.textContent = 'Time OK'
-          timeElement.textContent = `Server Time: ${formatTime(json.time)}`
-          flipClockHours.textContent = json.time[3].toString().padStart(2, '0')
-          flipClockMins.textContent = json.time[4].toString().padStart(2, '0')
-          flipClockYear.textContent = json.time[0].toString().padStart(4, '0')
         }
+        timeElement.textContent = `Server Time: ${formatTime(json.time)}`
+        flipClockHours.textContent = json.time[3].toString().padStart(2, '0')
+        flipClockMins.textContent = json.time[4].toString().padStart(2, '0')
+        flipClockYear.textContent = json.time[0].toString().padStart(4, '0')
       } else {
         statusElement.textContent = 'Error: ' + response.status
       }
