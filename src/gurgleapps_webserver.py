@@ -31,13 +31,8 @@ class GurgleAppsWebserver:
         self.doc_root = doc_root
         self.function_routes = []
         self.log_level = log_level
-        # wifi client in station mode so we can connect to an access point
         self.wlan_sta = network.WLAN(network.STA_IF)
         self.wlan_ap = network.WLAN(network.AP_IF)
-        # activate the interface
-        #self.wlan.active(True)
-        # connect to the access point with the ssid and password
-        #self.wlan.connect(self.wifi_ssid, self.wifi_password)
         self.html = """<!DOCTYPE html>
         <html>
             <head> <title>GurgleApps.com Webserver</title> </head>
@@ -46,27 +41,11 @@ class GurgleAppsWebserver:
             </body>
         </html>
         """
-        # counter = self.timeout
-        # while counter > 0:
-        #     if self.wlan_sta.status() < 0 or self.wlan_sta.status() >= 3:
-        #         break
-        #     counter -= 1
-        #     print('waiting for connection...')
-        #     time.sleep(1)
-
-        # if self.wlan.status() != 3:
-        # if self.wlan_sta.isconnected() == False:
-        #     raise RuntimeError('network connection failed')
-        # else:
-        #     print('connected')
-        #     status = self.wlan_sta.ifconfig()
-        #     print('ip = ' + status[0])
         if self.connect_wifi(self.wifi_ssid, self.wifi_password):
             print('point your browser to http://', self.ip_address)
         else:
             raise RuntimeError('network connection failed')
         self.server_running = False
-        # self.ip_address = status[0]
         
 
     def connect_wifi(self, ssid, password):
@@ -97,8 +76,6 @@ class GurgleAppsWebserver:
     
     def start_access_point(self, ssid, password=None):
     #def connect_access_point(self, ssid, password=None, ip='192.168.1.1', subnet='255.255.255.0', gateway='192.168.1.1', dns='8.8.8.8'):
-        # Deactivate Wi-Fi mode
-        # self.wlan_sta.active(False)
         # Set the IP configuration for the AP mode
         #self.wlan_ap.ifconfig((ip, subnet, gateway, dns))
         self.ap_ssid = ssid
@@ -412,18 +389,21 @@ class GurgleAppsWebserver:
 
     def list_files_and_folders(self, path):
         entries = uos.ilistdir(path)
+        path = path.replace(self.doc_root, '')
+        # remove all leading slashes
+        path = path.lstrip('/')
         files_and_folders = []
         # print("list_files_and_folders: "+path)
         # print("list_files_and_folders: "+self.doc_root)
         if path != self.doc_root and path != self.doc_root + '/':
-            files_and_folders.append({"name": "..", "type": "directory"})
+            files_and_folders.append({"name": "..", "type": "directory", "path": path+"/.."})
         for entry in entries:
             name = entry[0]
             mode = entry[1]
             if mode & 0o170000 == 0o040000:  # Check if it's a directory
-                files_and_folders.append({"name": name, "type": "directory"})
+                files_and_folders.append({"name": name, "type": "directory", "path": path+"/"+name})
             elif mode & 0o170000 == 0o100000:  # Check if it's a file
-                files_and_folders.append({"name": name, "type": "file"})
+                files_and_folders.append({"name": name, "type": "file", "path": path+"/"+name})
         return files_and_folders
 
     def generate_root_page_html(self, files_and_folders):
@@ -465,7 +445,7 @@ class GurgleAppsWebserver:
                 icon = folder_icon_svg if file_or_folder['type'] == 'directory' else file_icon_svg
                 text_class = 'text-blue-500' if file_or_folder['type'] == 'directory' else 'text-blue-600' 
                 bg_class = "" if index % 2 == 1 else "bg-gray-50"
-                yield f"<li class='border-t border-gray-300 py-1.5 {bg_class}'><a href='/{file_or_folder['name']}' class='flex items-center font-semibold {text_class} hover:text-blue-700'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
+                yield f"<li class='border-t border-gray-300 py-1.5 {bg_class}'><a href='{file_or_folder['path']}' class='flex items-center font-semibold {text_class} hover:text-blue-700'>{icon}<p class='ml-2'>{file_or_folder['name']}</p></a></li>"
         yield "</ul>"
         # Closing tags for the body and container div
         yield """
