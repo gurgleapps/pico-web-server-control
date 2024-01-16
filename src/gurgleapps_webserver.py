@@ -82,8 +82,8 @@ class GurgleAppsWebserver:
         #self.wlan_ap.ifconfig((ip, subnet, gateway, dns))
         self.ap_ssid = ssid
         self.ap_password = password
+        self.wlan_ap.active(True) # ESP32 needed this before config
         self.wlan_ap.config(essid=ssid, password=password)
-        self.wlan_ap.active(True)
         self.ip_address = self.wlan_ap.ifconfig()[0]
         print(f"AP Mode started. SSID: {ssid}, IP: {self.ip_address}")
         return True
