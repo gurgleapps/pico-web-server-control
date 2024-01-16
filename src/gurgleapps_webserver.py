@@ -21,6 +21,7 @@ class GurgleAppsWebserver:
 
     def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www", log_level=0):
         print("GurgleApps.com Webserver")
+        self.default_index_pages = [] # ["index.html", "index.htm"]
         self.ip_address = '1.1.1.1'
         self.port = port
         self.timeout = timeout
@@ -41,10 +42,11 @@ class GurgleAppsWebserver:
             </body>
         </html>
         """
-        if self.connect_wifi(self.wifi_ssid, self.wifi_password):
-            print('point your browser to http://', self.ip_address)
-        else:
-            raise RuntimeError('network connection failed')
+        if self.wifi_ssid!=None:
+            if self.connect_wifi(self.wifi_ssid, self.wifi_password):
+                print('point your browser to http://', self.ip_address)
+            else:
+                raise RuntimeError('network connection failed')
         self.server_running = False
         
 
@@ -88,7 +90,7 @@ class GurgleAppsWebserver:
     
     async def maintain_connection(self):
         while True:
-            if self.wlan_sta.isconnected() == False:
+            if self.wlan_sta.isconnected() == False and self.wifi_ssid != None:
                 print("Lost connection to Wi-Fi. Attempting to reconnect...")
                 self.connect_wifi(self.wifi_ssid, self.wifi_password)
             await asyncio.sleep(10)
@@ -116,6 +118,8 @@ class GurgleAppsWebserver:
                 )
         await main()
 
+    def set_default_index_pages(self, default_index_pages):
+        self.default_index_pages = default_index_pages
 
     # async def start_server(self):
     #     print("start_server")
@@ -213,6 +217,13 @@ class GurgleAppsWebserver:
                 return
             # perhaps it is a folder
             if self.dir_exists(file_path): #serve a folder
+                for index_page in self.default_index_pages:
+                    index_file_path = file_path.rstrip("/") + "/" + index_page
+                    if self.log_level > 1:
+                        print("index_file_path: "+str(index_file_path))
+                    if self.file_exists(index_file_path):
+                        await response.send_file(index_file_path, content_type=self.get_content_type(index_file_path))
+                        return
                 files_and_folders = self.list_files_and_folders(file_path)
                 await response.send_iterator(self.generate_root_page_html(files_and_folders))
                 return
