@@ -13,6 +13,7 @@ class Board:
         PICO_W = 'Raspberry Pi Pico W'
         PICO = 'Raspberry Pi Pico'
         ESP8266 = 'ESP8266'
+        ESP32_C3 = 'ESP32-C3'
         ESP32 = 'ESP32'
         UNKNOWN = 'Unknown'
 
@@ -29,6 +30,11 @@ class Board:
             return self.BoardType.PICO
         elif sysname == 'esp8266':
             return self.BoardType.ESP8266
+        elif sysname == 'esp32':
+            if 'esp32c3' in machine:
+                return self.BoardType.ESP32_C3
+            else:
+                return self.BoardType.ESP32
         # Add more conditions for other boards here
         else:
             return self.BoardType.UNKNOWN

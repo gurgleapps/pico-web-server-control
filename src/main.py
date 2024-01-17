@@ -23,6 +23,10 @@ elif BOARD_TYPE == Board.BoardType.PICO:
     led = Pin(25, Pin.OUT)
 elif BOARD_TYPE == Board.BoardType.ESP8266:
     led = Pin(2, Pin.OUT)
+elif BOARD_TYPE == Board.BoardType.ESP32:
+    led = Pin(2, Pin.OUT)
+elif BOARD_TYPE == Board.BoardType.ESP32_C3:
+    led = Pin(8, Pin.OUT)
 else:
     led = Pin(2, Pin.OUT)
 
