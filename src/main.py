@@ -16,17 +16,20 @@ from board import Board
 
 BOARD_TYPE = Board().type
 print("Board type: " + BOARD_TYPE)
-
+INVERT_LED = False
 if BOARD_TYPE == Board.BoardType.PICO_W:
     led = Pin("LED", Pin.OUT)
 elif BOARD_TYPE == Board.BoardType.PICO:
     led = Pin(25, Pin.OUT)
 elif BOARD_TYPE == Board.BoardType.ESP8266:
     led = Pin(2, Pin.OUT)
+    INVERT_LED = True
 elif BOARD_TYPE == Board.BoardType.ESP32:
     led = Pin(2, Pin.OUT)
+    INVERT_LED = True
 elif BOARD_TYPE == Board.BoardType.ESP32_C3:
     led = Pin(8, Pin.OUT)
+    INVERT_LED = True
 else:
     led = Pin(2, Pin.OUT)
 
@@ -113,12 +116,12 @@ async def main():
         await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
     while not shutdown:
         if status:
-            led.on()
+            led.value(not INVERT_LED)
             await asyncio.sleep(blink_on_time)
-            led.off()
+            led.value(INVERT_LED)
             await asyncio.sleep(blink_off_time)
         else:
-            led.off()
+            led.value(not INVERT_LED)
             await asyncio.sleep(0.2)
             
 server = GurgleAppsWebserver(
