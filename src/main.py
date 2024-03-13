@@ -101,6 +101,22 @@ async def stop_server(request, response):
     await server.stop_server()
     shutdown = True
 
+async def connnect_to_wifi():
+    wifi_ssid = config.WIFI_SSID.strip()
+    if wifi_ssid:
+        wifi_password = config.WIFI_PASSWORD.strip()
+        print("Connecting to wifi")
+        success = await server.connect_wifi(wifi_ssid, wifi_password)
+        if success:
+            print("Connected to wifi")
+        else:
+            print("Failed to connect to wifi")
+        return success
+    else:
+        print("No wifi ssid set")
+        return False
+
+
 async def run_as_access_point(request, response):
     print("Running as access point")
     success = server.start_access_point('gurgleapps', 'gurgleapps')
@@ -112,6 +128,7 @@ async def run_as_access_point(request, response):
 
 async def main():
     global shutdown
+    await connnect_to_wifi()
     if config.BLINK_IP:
         await(server.blink_ip(led_pin = led, last_only = config.BLINK_LAST_ONLY))
     while not shutdown:
@@ -125,8 +142,8 @@ async def main():
             await asyncio.sleep(0.2)
             
 server = GurgleAppsWebserver(
-    config.WIFI_SSID,
-    config.WIFI_PASSWORD,
+    None,
+    None,
     port=80,
     timeout=20,
     doc_root="/www",
