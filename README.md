@@ -11,10 +11,13 @@ The latest features include improved memory usage, support for additional microc
 - Serve static and dynamic web pages from your Raspberry Pi Pico
 - Run Python functions on your microcontroller device from a web browser
 - Create dynamic web pages with live data from your Pico or other Microcontroller
+- Run as ACcess Point (AP) or connect to your Wi-Fi network
 - Blink the IP address using the built-in LED, handy when you're out in the field with no screen or computer
 - Display a file and folder list of your root directory with an attractive and responsive user interface
 - End-to-end examples showcasing various functionalities
 - Easily customizable codebase
+- Support for ESP8266 and ESP32 microcontrollers
+
 
 ## Setup
 
