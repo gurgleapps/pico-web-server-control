@@ -15,6 +15,7 @@ from response import Response
 from request import Request
 import gc
 import os
+import machine
 
 
 class GurgleAppsWebserver:
@@ -34,6 +35,7 @@ class GurgleAppsWebserver:
         self.log_level = log_level
         self.wlan_sta = network.WLAN(network.STA_IF)
         self.wlan_ap = network.WLAN(network.AP_IF)
+        self.enable_cors = False
         self.html = """<!DOCTYPE html>
         <html>
             <head> <title>GurgleApps.com Webserver</title> </head>
@@ -50,31 +52,63 @@ class GurgleAppsWebserver:
         self.server_running = False
         
 
-    def connect_wifi(self, ssid, password):
-        self.wifi_ssid = ssid
-        self.wifi_password = password
-        # Deactivate AP mode
-        self.wlan_ap.active(False)
-        if self.wlan_sta.isconnected():
-            print("Already connected to Wi-Fi. IP: "+self.wlan_sta.ifconfig()[0])
-            self.wlan_sta.disconnect()
-            self.wlan_sta.active(False)
-            time.sleep(1)
-            print("Disconnected from Wi-Fi.")
-
-        # Activate Wi-Fi mode and connect
-        self.wlan_sta.active(True)
-        self.wlan_sta.connect(ssid, password)
-        # Wait for connection
-        print("Connecting to Wi-Fi...")
-        for _ in range(self.timeout):
-            time.sleep(1)
+    async def connect_wifi(self, ssid, password):
+        try:
+            self.wifi_ssid = ssid
+            self.wifi_password = password
+            # Deactivate AP mode
+            #self.wlan_ap.active(False)
             if self.wlan_sta.isconnected():
-                self.ip_address = self.wlan_sta.ifconfig()[0]
-                print(f"Connected to Wi-Fi. IP: {self.ip_address}")
-                return True
-        print("Failed to connect to Wi-Fi.")
-        return False
+                print("Already connected to Wi-Fi. IP: "+self.wlan_sta.ifconfig()[0])
+                self.wlan_sta.disconnect()
+                self.wlan_sta.active(False)
+                #time.sleep(1)
+                await asyncio.sleep(1)
+                print("Disconnected from Wi-Fi.")
+            else:
+                print("Not connected to Wi-Fi.")
+
+            # Activate Wi-Fi mode and connect
+            self.wlan_sta.active(True)
+            #time.sleep(1)
+            await asyncio.sleep(1)
+            self.wlan_sta.connect(ssid, password)
+            # Wait for connection
+            print("Connecting to Wi-Fi...")
+            for _ in range(self.timeout):
+                #time.sleep(1)
+                await asyncio.sleep(1)
+                if self.wlan_sta.isconnected():
+                    self.ip_address = self.wlan_sta.ifconfig()[0]
+                    print(f"Connected to Wi-Fi. IP: {self.ip_address}")
+                    return True
+            print("Failed to connect to Wi-Fi.")
+            return False
+        except OSError as e:
+            print(f"Error connecting to Wi-Fi: {e}")
+            return False
+        
+    def is_wifi_connected(self):
+        return self.wlan_sta.isconnected()
+    
+    def is_access_point_active(self):
+        return self.wlan_ap.active()
+    
+    def get_wifi_ssid(self):
+        return self.wifi_ssid
+    
+    def get_wifi_ip_address(self):
+        return self.wlan_sta.ifconfig()[0]
+    
+    def get_ap_ssid(self):
+        return self.wlan_ap.config('essid')
+        return self.ap_ssid
+    
+    def get_ap_ip_address(self):
+        return self.wlan_ap.ifconfig()[0]
+    
+    def get_ip_address(self):
+        return self.ip_address
     
     def start_access_point(self, ssid, password=None):
     #def connect_access_point(self, ssid, password=None, ip='192.168.1.1', subnet='255.255.255.0', gateway='192.168.1.1', dns='8.8.8.8'):
@@ -82,10 +116,16 @@ class GurgleAppsWebserver:
         #self.wlan_ap.ifconfig((ip, subnet, gateway, dns))
         self.ap_ssid = ssid
         self.ap_password = password
-        self.wlan_ap.active(True) # ESP32 needed this before config
+        if os.uname().sysname == 'esp32':
+            self.wlan_ap.active(True) # ESP32 needed this before config
         self.wlan_ap.config(essid=ssid, password=password)
-        self.ip_address = self.wlan_ap.ifconfig()[0]
-        print(f"AP Mode started. SSID: {ssid}, IP: {self.ip_address}")
+        if os.uname().sysname != 'esp32':
+            self.wlan_ap.active(True)
+        print(f"AP Mode started. SSID: {self.get_ap_ssid()}, IP: {self.get_ap_ip_address()}")
+        # pico needs a cycle or ssid is PICO-xxxx
+        if self.get_ap_ssid() != ssid:
+            print("AP SSID incorrect: "+self.get_ap_ssid())
+            machine.reset()
         return True
     
     async def maintain_connection(self):
@@ -93,7 +133,7 @@ class GurgleAppsWebserver:
             if self.wlan_sta.isconnected() == False and self.wifi_ssid != None:
                 print("Lost connection to Wi-Fi. Attempting to reconnect...")
                 self.connect_wifi(self.wifi_ssid, self.wifi_password)
-            await asyncio.sleep(10)
+            await asyncio.sleep(20)
 
 
     async def start_server(self):
@@ -121,6 +161,9 @@ class GurgleAppsWebserver:
     def set_default_index_pages(self, default_index_pages):
         self.default_index_pages = default_index_pages
 
+    def set_cors(self, enable_cors=True):
+        self.enable_cors = enable_cors
+
     # async def start_server(self):
     #     print("start_server")
     #     server = await asyncio.start_server(
@@ -134,7 +177,7 @@ class GurgleAppsWebserver:
     async def serve_request(self, reader, writer):
         gc.collect()
         try:
-            response = Response(writer)
+            response = Response(writer, enable_cors=self.enable_cors)
             url = ""
             method = ""
             content_length = 0
@@ -149,32 +192,41 @@ class GurgleAppsWebserver:
                     break
                 headers.append(line)
             request_raw = str("\r\n".join(headers))
-            print(request_raw)
-            request_pattern = re.compile(r"(GET|POST)\s+([^\s]+)\s+HTTP")
+            if self.log_level > 0:
+                print(request_raw)
+            request_pattern = re.compile(r"(GET|POST|OPTIONS)\s+([^\s]+)\s+HTTP")
             match = request_pattern.search(request_raw)
             if match:
                 method = match.group(1)
                 url = match.group(2)
-                print(method, url)
+                if self.log_level > 0:
+                    print(method, url)
             else:  # regex didn't match, try splitting the request line
                 request_parts = request_raw.split(" ")
                 if len(request_parts) > 1:
                     method = request_parts[0]
                     url = request_parts[1]
-                    print(method, url)
-                else:
+                    if self.log_level > 0:
+                        print(method, url)
+                elif self.log_level > 0:
                     print("no match")
+            if method == "OPTIONS":
+                # Handle preflight requests
+                await response.send("", status_code=204)
+                return
             # extract content length for POST requests
             if method == "POST":
                 content_length_pattern = re.compile(r"Content-Length:\s+(\d+)")
                 match = content_length_pattern.search(request_raw)
                 if match:
                     content_length = int(match.group(1))
-                    print("content_length: "+str(content_length))
+                    if self.log_level > 0:
+                        print("content_length: "+str(content_length))
             # Read the POST data if there's any
             if content_length > 0:
                 post_data_raw = await reader.readexactly(content_length)
-                print("POST data:", post_data_raw)
+                if self.log_level > 0:
+                    print("POST data:", post_data_raw)
                 content_type_header = "Content-Type: application/json"  # default to JSON
                 for header in headers:
                     if header.lower().startswith("content-type:"):
@@ -182,6 +234,8 @@ class GurgleAppsWebserver:
                         break
                 if "application/json" in content_type_header.lower():
                     try:
+                        if self.log_level > 0:
+                            print("decoding JSON data")
                         post_data = json.loads(post_data_raw)
                     except ValueError as e:
                         print("Error decoding JSON data:", e)
@@ -222,6 +276,7 @@ class GurgleAppsWebserver:
                     if self.log_level > 1:
                         print("index_file_path: "+str(index_file_path))
                     if self.file_exists(index_file_path):
+                        print("serving index file: "+index_file_path)
                         await response.send_file(index_file_path, content_type=self.get_content_type(index_file_path))
                         return
                 files_and_folders = self.list_files_and_folders(file_path)
