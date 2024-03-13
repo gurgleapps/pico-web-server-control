@@ -142,8 +142,6 @@ async def main():
             await asyncio.sleep(0.2)
             
 server = GurgleAppsWebserver(
-    None,
-    None,
     port=80,
     timeout=20,
     doc_root="/www",

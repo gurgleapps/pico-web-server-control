@@ -20,14 +20,14 @@ import machine
 
 class GurgleAppsWebserver:
 
-    def __init__(self, wifi_ssid, wifi_password, port=80, timeout=20, doc_root="/www", log_level=0):
+    def __init__(self, port=80, timeout=20, doc_root="/www", log_level=0):
         print("GurgleApps.com Webserver")
         self.default_index_pages = [] # ["index.html", "index.htm"]
         self.ip_address = '1.1.1.1'
         self.port = port
         self.timeout = timeout
-        self.wifi_ssid = wifi_ssid
-        self.wifi_password = wifi_password
+        self.wifi_ssid = None
+        self.wifi_password = None
         self.ap_ssid = None
         self.ap_password = None
         self.doc_root = doc_root
@@ -44,11 +44,6 @@ class GurgleAppsWebserver:
             </body>
         </html>
         """
-        if self.wifi_ssid!=None:
-            if self.connect_wifi(self.wifi_ssid, self.wifi_password):
-                print('point your browser to http://', self.ip_address)
-            else:
-                raise RuntimeError('network connection failed')
         self.server_running = False
         
 
