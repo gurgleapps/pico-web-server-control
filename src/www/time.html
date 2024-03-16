@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="/styles.css">
+  <title>GurgleApps.com Frequency Generator</title>
+</head>
+
+<body class="bg-gray-100">
+  <div class="min-h-screen flex flex-col items-center justify-center">
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+
+
+      <div class="flex justify-center mb-8">
+        <a href="https://gurgleapps.com"><img class="h-16 -w-auto" src="img/logo.svg"></a>
+      </div>
+
+      <!-- flip clock -->
+      <div class="flex justify-center">
+        <div class="text-white font-mono font-extrabold mx-auto text-4xl bg-black rounded-2xl p-1">
+          <div class=" inline-flex flex-col items-center">
+            <!-- year -->
+            <div class="mx-auto  text-2xl my-1">
+              <div class="relative">
+                <div class="absolute inset-0 h-full grid grid-rows-2">
+                  <div class="bg-gradient-to-br from-gray-800 to-gray-900"></div>
+                  <div class="bg-gradient-to-br from-gray-700 to-gray-900"></div>
+                </div>
+                <div class="relative px-1" id="flipClockYear">0000</div>
+                <div class="absolute inset-0 w-full  h-full flex items-center justify-center">
+                  <div class="h-px w-full  bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-center">
+              <!-- hours -->
+              <div class="relative py-3 px-2">
+                <div class="absolute inset-0 w-full h-full grid grid-rows-2">
+                  <div class="bg-gradient-to-br from-gray-800 to-gray-900"></div>
+                  <div class="bg-gradient-to-br from-gray-700 to-gray-900"></div>
+                </div>
+                <div id="flipClockHours" class="relative">05</div>
+                <div class="absolute inset-0 w-full h-full flex items-center justify-center">
+                  <div class="h-px w-full bg-gray-800"></div>
+                </div>
+              </div>
+              <div class=" bg-black py-3">
+                <div class="-mt-[3px]">:</div>
+              </div>
+              <!-- mins -->
+              <div class="relative py-3 px-2">
+                <div class="absolute inset-0 w-full h-full grid grid-rows-2">
+                  <div class="bg-gradient-to-br from-gray-800 to-gray-900"></div>
+                  <div class="bg-gradient-to-br from-gray-700 to-gray-900"></div>
+                </div>
+                <div id="flipClockMins" class="relative">05</div>
+                <div class="absolute inset-0 w-full h-full flex items-center justify-center">
+                  <div class="h-px w-full bg-gray-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
+      <div class="mb-4">
+        <div id="status" class="text-gray-700 font-semibold">Status:</div>
+        <div id="time" class="text-gray-700 font-semibold">Server Time:</div>
+      </div>
+
+      <div class="flex justify-center">
+        <button id="refreshBtn"
+          class="bg-green-600 text-white font-semibold py-2 px-4 rounded focus:outline-none hover:bg-green-700">Refresh</button>
+      </div>
+
+
+    </div>
+  </div>
+
+  <script>
+    const statusElement = document.getElementById('status')
+    const timeElement = document.getElementById('time')
+    const refreshBtn = document.getElementById('refreshBtn')
+    const flipClockHours = document.getElementById('flipClockHours')
+    const flipClockMins = document.getElementById('flipClockMins')
+    const flipClockYear = document.getElementById('flipClockYear')
+    //const path = 'http://192.168.1.167'
+    const path = ''
+
+    document.addEventListener('DOMContentLoaded', async (event) => {
+      getTime()
+    });
+
+    refreshBtn.addEventListener('click', async () => {
+      getTime()
+    });
+
+    async function getTime() {
+      const response = await fetch(path + '/get-time')
+      if (response.ok) {
+        const json = await response.json()
+        if (json.error) {
+          statusElement.textContent = 'Error: ' + json.message
+        } else {
+          statusElement.textContent = 'Time OK'
+        }
+        timeElement.textContent = `Server Time: ${formatTime(json.time)}`
+        flipClockHours.textContent = json.time[3].toString().padStart(2, '0')
+        flipClockMins.textContent = json.time[4].toString().padStart(2, '0')
+        flipClockYear.textContent = json.time[0].toString().padStart(4, '0')
+      } else {
+        statusElement.textContent = 'Error: ' + response.status
+      }
+    }
+
+    function formatTime(timeArray) {
+      const [year, month, day, hour, minute, second] = timeArray;
+      return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+    }
+
+  </script>
+</body>
+
+</html>
